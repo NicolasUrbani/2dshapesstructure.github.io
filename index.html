@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>The 2D Shape Structure Dataset</title>
+
+
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+
+  </head>
+  <body onload="doLoad()">
+
+    <div class="container-fluid">
+	<div class="row">
+		<div class="col-md-12 ">
+			<h1 class="text-center">
+				The 2D Shape Structure Dataset
+			</h1>
+			<h2 class="text-center text-muted" id="currentdisplay">
+	
+			</h2>
+		</div>
+	</div>
+	<div class="row" id="main">
+		<div class="col-md-2"></div>
+
+		<div class="col-md-8">
+			<h4 class="text-left">
+				Abstract
+			</h4>
+			<p class="text-justify">
+On this web page, we present the 2D Shape Structure database, a public, user-generated dataset of 2D shape decompositions into a hierarchy of shape parts with geometric relationships retained. It is the outcome of a large-scale user study obtained by crowdsourcing, involving over 1200 shapes in 70 shape classes, and 2681 participants. A total of 41953 annotations has been collected with at least 24 annotations per shape. For each shape, user decompositions into main shape, one or more levels of parts, and a level of details are available. This database reinforces a philosophy that understanding shape structure as a whole, rather than in the separated categories of parts decomposition, parts hierarchy, and analysis of relationships between parts, is crucial for full shape understanding. We provide initial statistical explorations of the data to determine representative shape annotations and to determine the number of modes in the annotations. We release this rich and complex database and make it openly available so the shape community can access a ground truth of human perception of holistic shape structure.
+			</p>
+			<br>
+			<h3 class="text-left">
+				Data
+			</h3>
+			<p class="text-justify">
+			The input curves and shape discretizations and associated triangulations is available in two formats: <a href="data/ShapesJSON.zip">JSON</a> and <a href="data/ShapesPLAINTEXT.zip">plain text</a>. The shapes are described as a list of points coordinates (x,y) along with a list of triangles constituting the shapes Delaunay decomposition, described as triplets of points index (p1,p2,p3). 
+			</p>
+		</div>
+
+
+
+		<div class="col-md-2"></div>
+	</div>
+</div>
+
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+  </body>
+</html>
