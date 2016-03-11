@@ -33,14 +33,21 @@
 				Abstract
 			</h4>
 			<p class="text-justify">
-On this web page, we present the 2D Shape Structure database, a public, user-generated dataset of 2D shape decompositions into a hierarchy of shape parts with geometric relationships retained. It is the outcome of a large-scale user study obtained by crowdsourcing, involving over 1200 shapes in 70 shape classes, and 2681 participants. A total of 41953 annotations has been collected with at least 24 annotations per shape. For each shape, user decompositions into main shape, one or more levels of parts, and a level of details are available. This database reinforces a philosophy that understanding shape structure as a whole, rather than in the separated categories of parts decomposition, parts hierarchy, and analysis of relationships between parts, is crucial for full shape understanding. We provide initial statistical explorations of the data to determine representative shape annotations and to determine the number of modes in the annotations. We release this rich and complex database and make it openly available so the shape community can access a ground truth of human perception of holistic shape structure.
+On this web page, we present the 2D Shape Structure database, a public, user-generated dataset of 2D shape decompositions into a hierarchy of shape parts with geometric relationships retained. It is the outcome of a large-scale user study obtained by crowdsourcing, involving over 1200 shapes in 70 shape classes, and 2861 participants. A total of 41953 annotations has been collected with at least 24 annotations per shape. For each shape, user decompositions into main shape, one or more levels of parts, and a level of details are available. This database reinforces a philosophy that understanding shape structure as a whole, rather than in the separated categories of parts decomposition, parts hierarchy, and analysis of relationships between parts, is crucial for full shape understanding. We provide initial statistical explorations of the data to determine representative shape annotations and to determine the number of modes in the annotations. We release this rich and complex database and make it openly available so the shape community can access a ground truth of human perception of holistic shape structure.
 			</p>
 			<br>
 			<h3 class="text-left">
 				Data
 			</h3>
 			<p class="text-justify">
-			The input curves and shape discretizations and associated triangulations is available in two formats: <a href="data/ShapesJSON.zip">JSON</a> and <a href="data/ShapesPLAINTEXT.zip">plain text</a>. The shapes are described as a list of points coordinates (x,y) along with a list of triangles constituting the shapes Delaunay decomposition, described as triplets of points index (p1,p2,p3). 
+			The name of the classes and, for each class, the names of the corresponding shapes are available both in <a href="data/NamesJSON.zip">JSON</a> and in <a href="data/NamesPLAINTEXT.zip">plain text.</a>
+			<br> <br>
+			The input curves and shape discretizations along with associated triangulations is available in two formats: <a href="data/ShapesJSON.zip">JSON</a> and <a href="data/ShapesPLAINTEXT.zip">plain text</a>. The shapes are described as a list of points coordinates (x,y) along with a list of triangles constituting the shapes Delaunay decomposition, described as triplets of points index (p1,p2,p3).
+
+			<br> <br>
+
+			The user annotations are stored in a <a href="data/annotation.csv">CSV file</a> which is a list of quadruplets (id,username,shape,annotation), separated by a comma.
+ 
 			</p>
 		</div>
 
