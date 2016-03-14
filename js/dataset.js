@@ -9,7 +9,11 @@ var currentShapeInfo;
 
 var annotations;
 
+var majority;
+
 function doLoad() {
+	
+	hideElement('sidePanel');
 	
 	nbCanvas = 0;
 
@@ -46,15 +50,22 @@ function doLoad() {
 	}; 
 	xhr_object.send(null);
 
-	hideElement('BackButton');
 	var backButton = document.getElementById('BackButton');
 	backButton.addEventListener('click',backToShapeCategory,false);
+/*	
+	// Create canvas for majority vote
+	var majorityCanvasContainer = document.getElementById("majoritycanvascontainer");
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','majorityCanvas');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize);
+	majorityCanvasContainer.appendChild(auxCanvas);*/
 } 
 
 
 function handleClickCategory(e) {
 	
-	hideElement('BackButton');
+	hideElement('sidePanel');
 	var aux = e.srcElement.id;
 	
 	selectedLabel = aux.split('Button')[0];
@@ -178,9 +189,9 @@ function handleShapeClick(e) {
 
 function displayShapeAnnotations(shapeToDisplay) {
 	
-	displayElement('BackButton');
 
-	// Fetch the shapes name of these selected Label
+
+	// Fetch the annotations of this shape
 	var xhr_object=new XMLHttpRequest();
 	xhr_object.open("GET","JSON/Annotations/"+shapeToDisplay+".json",false);
 	annotations = null;
@@ -244,9 +255,44 @@ function displayShapeAnnotations(shapeToDisplay) {
 		canToDraw.removeEventListener('click',handleShapeClick,false);
 	}
 
+	// Remove event listeners on all canvases
+	for (var s = 0; s < nbCanvas ; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+
+		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
+		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
+		canToDraw.removeEventListener('click',handleShapeClick,false);
+	}
+
+	//displayMajorityVote(shapeToDisplay);
+
+
+
+	displayElement('sidePanel');
+
 }
 
 function backToShapeCategory() {
-	hideElement('BackButton');
+	hideElement('sidePanel');
 	displayShapeCategory();
+}
+
+function displayMajorityVote(shapeToDisplay) {
+	// Fetch the majority annotation of this shape
+	var xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Majority/"+shapeToDisplay+".json",false);
+	majority = null;
+	xhr_object.onreadystatechange  = function() { 
+	     if(xhr_object.readyState  == 4) {
+
+				var aux = eval('('+xhr_object.responseText+')');
+				majority = aux.majority;
+				
+	     }
+	}; 
+	xhr_object.send(null);
+	
+	var canToDraw = document.getElementById("majorityCanvas");
+	var ctxToDraw = canToDraw.getContext('2d');
+	drawFilledObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,majority);	
 }
