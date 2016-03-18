@@ -8,7 +8,8 @@ function drawObject(ctxToDraw,scale,width,offX,offY,points) {
 	ctxToDraw.strokeStyle = 'black';
 	ctxToDraw.lineWidth = width;
 	ctxToDraw.clearRect(0,0,canSize,canSize);
-	//ctxToDraw.rotate(Math.PI / 90);
+	
+	
 	ctxToDraw.beginPath();
 	ctxToDraw.moveTo(scale*points[0].x+offX,scale*points[0].y+offY);
 	for (var i=1; i<points.length;i++) {
@@ -16,7 +17,6 @@ function drawObject(ctxToDraw,scale,width,offX,offY,points) {
 	}
 	ctxToDraw.lineTo(scale*points[0].x+offX,scale*points[0].y+offY);
 	ctxToDraw.stroke();
-
 	ctxToDraw.closePath();	
 
 }
@@ -39,6 +39,7 @@ function fillTriangle(ctxToDraw,t,scale,offX,offY,col,points,triangles) {
 	ctxToDraw.strokeStyle = colors[col];
 	
 	ctxToDraw.beginPath();
+	
 	ctxToDraw.moveTo(scale*points[triangles[t].p1].x+offX,scale*points[triangles[t].p1].y+offY);
 	ctxToDraw.lineTo(scale*points[triangles[t].p2].x+offX,scale*points[triangles[t].p2].y+offY);
 	ctxToDraw.lineTo(scale*points[triangles[t].p3].x+offX,scale*points[triangles[t].p3].y+offY);

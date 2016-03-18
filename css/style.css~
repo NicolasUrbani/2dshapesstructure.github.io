@@ -1,7 +1,0 @@
-#main {
-	margin-top: 50px;
-}
-
-#labelswrapper {
-	 overflow-x:scroll;
-}
