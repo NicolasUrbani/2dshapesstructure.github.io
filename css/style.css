@@ -9,3 +9,7 @@ canvas {
 #linkToDataset {
 	font-size: 40px;
 }
+
+#sidePanel {
+	display: none;
+}
