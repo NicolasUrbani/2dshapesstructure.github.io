@@ -15,12 +15,18 @@ var nbSpectralCanvas;
 
 var spectralColors = ['cornflowerblue','orange','beige','indigo'];
 
+var popoverDisplayed;
+
 function doLoad() {
 	
 	hideElement('sidePanel');
 	
+	// Show the popover to help users
+	$('#labelswrapper').popover('show');
+	
 	nbCanvas = 0;
 	nbSpectralCanvas = 0;
+	popoverDisplayed = false;
 
 	// Fetch the different classes of the dataset
 	var xhr_object=new XMLHttpRequest();
@@ -75,7 +81,12 @@ function doLoad() {
 
 function handleClickCategory(e) {
 
+	// Hiding the side panel in case it was displayed
 	hideElement('sidePanel');
+	
+	// Hide the popover to help users
+	$('#labelswrapper').popover('hide');
+	
 	
 	var aux; 
 	if (e.srcElement == null) {
@@ -162,6 +173,11 @@ function displayShapeCategory() {
 		var ctxToDraw = canToDraw.getContext('2d');
 		ctxToDraw.clearRect(0,0,canSize,canSize);
 	}
+	
+	// Show the popover that tells users to click on a shape
+	if (!popoverDisplayed) {
+		$('#canvascontainer').popover('show');
+	}
 
 }
 
@@ -233,7 +249,11 @@ function handleShapeClick(e) {
 
 function displayShapeAnnotations(shapeToDisplay) {
 	
-
+	if (!popoverDisplayed) {
+		// Hide the popover that tells users to click on a shape
+		$('#canvascontainer').popover('hide');
+		popoverDisplayed = true;
+	}
 
 	// Fetch the annotations of this shape
 	var xhr_object=new XMLHttpRequest();
