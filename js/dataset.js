@@ -50,7 +50,7 @@ function doLoad() {
 					auxButton.setAttribute('type','button');
 					auxButton.addEventListener('click',handleClickCategory,'false');
 					auxButton.appendChild(auxTextNode);
-					if (k<35) {
+					if (k<23) {
 						container.appendChild(auxButton);
 					} else {
 						container2.appendChild(auxButton);
@@ -147,28 +147,32 @@ function displayShapeCategory() {
 	for (var s = 0; s < shapenames.length;s++) {
 
 		xhr_object=new XMLHttpRequest();
-		xhr_object2=new XMLHttpRequest();
-		var nameFile = shapenames[s].split("_");
 		xhr_object.open("GET","JSON/Parts/"+shapenames[s]+".json",false);
-		xhr_object2.open("GET","JSON/Shapes/"+namefile[0]+".json",false);
 		xhr_object.onreadystatechange  = function() { 
 			 if(xhr_object.readyState  == 4) {
+
+				var aux = eval('('+xhr_object.responseText+')');
+
+				var nameFile = shapenames[s].split("_");
+				xhr_object2=new XMLHttpRequest();
+				xhr_object2.open("GET","JSON/Shapes/"+nameFile[0]+".json",false);
 				xhr_object2.onreadystatechange  = function() { 
 					if(xhr_object2.readyState  == 4) {
 
-						var aux = eval('('+xhr_object.responseText+')');
 						var aux2 = eval('('+xhr_object2.responseText+')');
 
 						var canToDraw = document.getElementById("canvas" + s);
 						var ctxToDraw = canToDraw.getContext('2d');
-						drawFilledObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,aux.points,aux.triangles,aux2.hierachy);
+						drawFilledObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,aux2.points,aux2.triangles,aux.hierarchy);
+						//drawObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,aux2.points);
 					
 						
 						canToDraw.addEventListener('mouseenter',highlightCanvas,false);
 						canToDraw.addEventListener('mouseleave',dehighlightCanvas,false);
 						canToDraw.addEventListener('click',handleShapeClick,false);
 					}
-				}
+				};
+				xhr_object2.send(null);
 			 }
 		}; 
 		xhr_object.send(null);
