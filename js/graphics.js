@@ -27,7 +27,7 @@ function drawFilledObject(ctxToDraw,scale,width,offX,offY,points,triangles,annot
 
 	for (var t=0;t<triangles.length;t++) {
 		fillTriangle(ctxToDraw,t,scale,offX,offY,annot[t],points,triangles);
-	}	
+	}
 
 
 }
