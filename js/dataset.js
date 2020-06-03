@@ -163,8 +163,8 @@ function displayShapeCategory() {
 
 						var canToDraw = document.getElementById("canvas" + s);
 						var ctxToDraw = canToDraw.getContext('2d');
-						drawFilledObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,aux2.points,aux2.triangles,aux.hierarchy);
-						//drawObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,aux2.points);
+						drawObjectParts(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,aux2.points,aux2.triangles,aux.parts);
+						//drawFilledObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,aux2.points,aux2.triangles,aux.hierarchy);
 					
 						
 						canToDraw.addEventListener('mouseenter',highlightCanvas,false);
@@ -253,6 +253,7 @@ function handleShapeClick(e) {
 
 	if (idCanvas < shapenames.length) {
 		var shapeToDisplay = shapenames[idCanvas];
+		alert(shapeToDisplay);
 		displayShapeAnnotations(shapeToDisplay);
 		
 	}
