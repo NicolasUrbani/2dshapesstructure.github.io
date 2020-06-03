@@ -256,7 +256,7 @@ function handleShapeClick(e) {
 
 	if (idCanvas < shapenames.length) {
 		var shapeToDisplay = shapenames[idCanvas];
-		alert(shapeToDisplay);
+		//alert(shapeToDisplay);
 		displayPartsHighlighted(shapeToDisplay);
 		
 	}
@@ -523,8 +523,12 @@ function mouseInTriangle(xA,yA,xB,yB,xC,yC,xm,ym,scale,offX,offY){
 	yB = scale*yB+offY;
 	xC = scale*xC+offX;
 	yC = scale*yC+offY;
-	var xAM = xm-xA;
-    var yAM = ym-yA;
+
+	var xM = xm;
+	var yM = 2*canSize - ym;
+
+	var xAM = xM-xA;
+    var yAM = yM-yA;
     
     var xAC = xC-xA;
     var yAC = yC-yA;
@@ -538,10 +542,16 @@ function mouseInTriangle(xA,yA,xB,yB,xC,yC,xm,ym,scale,offX,offY){
     var detACAB = - detABAC;
     
     var x = detAMAC/detABAC;
-    var y = detAMAB/detACAB;
-	console.log(x);
-	console.log(x>=0 && y>=0);
-	console.log(x+y);
+	var y = detAMAB/detACAB;
+	console.log("scale = " + scale);
+	console.log("xm = " + xM);
+	console.log("ym = " + yM);	
+	/*console.log("xa = " + xA);
+	console.log("ya = " + yA);	
+	console.log("xb = " + xB);
+	console.log("yb = " + yB);	
+	console.log("xc = " + xC);
+	console.log("yc = " + yC);*/
     return x>=0 && y>=0 && x+y <=1;
 }
 
@@ -561,9 +571,10 @@ function highlightParts(e) {
 	var canvas = document.getElementById(auxId);
 	var ctx = canvas.getContext('2d'),
 	// Position X du canvas
-	elemLeft = canvas.offsetLeft,
+	rect = canvas.getBoundingClientRect(),
+	elemLeft = rect.left,
 	// Position Y du canvas
-	elemTop = canvas.offsetTop,
+	elemTop = rect.top,
 	x,
 	y;
 	
@@ -571,15 +582,19 @@ function highlightParts(e) {
 	x = e.pageX - elemLeft,
 	// Position Y du click (Position Y du click sur la page moins la position Y du canvas)
 	y = e.pageY - elemTop;
+	//console.log("x = " + x);
+	//console.log("y = " + y)
+	//console.log(elemLeft);
+	//console.log(elemTop)
 	//console.log(x);
 	var notdisplayed = 1;
 	var i = 0;
 	var numPart;
 	var points = currentShapeInfo.points;
-	console.log(currentShapeInfo.triangles.length)
+	//console.log(currentShapeInfo.triangles.length)
 	while ( i<currentShapeInfo.triangles.length && notdisplayed){
 		var currentTriangle = currentShapeInfo.triangles[i];
-		console.log(i);
+		//console.log(i);
 		//console.log(currentTriangle);
 		if (mouseInTriangle(points[currentTriangle.p1].x,points[currentTriangle.p1].y,points[currentTriangle.p2].x,points[currentTriangle.p2].y,points[currentTriangle.p3].x,points[currentTriangle.p3].y,x,y,2*9*canSize/10,canSize/20,canSize/20)==1) {
 			numPart = currentPartsInfo.parts[i];
