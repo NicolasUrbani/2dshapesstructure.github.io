@@ -6,6 +6,7 @@ var selectedLabel;
 var shapenames;
 
 var currentShapeInfo;
+var currentPartsInfo;
 
 var annotations;
 
@@ -16,6 +17,8 @@ var nbSpectralCanvas;
 var spectralColors = ['cornflowerblue','orange','beige','indigo'];
 
 var popoverDisplayed;
+
+var ShapeDisplayed;
 
 function doLoad() {
 	
@@ -153,9 +156,9 @@ function displayShapeCategory() {
 
 				var aux = eval('('+xhr_object.responseText+')');
 
-				var nameFile = shapenames[s].split("_");
+				var nameFile = shapenames[s].slice(0, shapenames[s].lastIndexOf("_"));
 				xhr_object2=new XMLHttpRequest();
-				xhr_object2.open("GET","JSON/Shapes/"+nameFile[0]+".json",false);
+				xhr_object2.open("GET","JSON/Shapes/"+nameFile+".json",false);
 				xhr_object2.onreadystatechange  = function() { 
 					if(xhr_object2.readyState  == 4) {
 
@@ -254,7 +257,7 @@ function handleShapeClick(e) {
 	if (idCanvas < shapenames.length) {
 		var shapeToDisplay = shapenames[idCanvas];
 		alert(shapeToDisplay);
-		displayShapeAnnotations(shapeToDisplay);
+		displayPartsHighlighted(shapeToDisplay);
 		
 	}
 }
@@ -267,7 +270,7 @@ function displayShapeAnnotations(shapeToDisplay) {
 		$('#canvascontainer').popover('hide');
 		popoverDisplayed = true;
 	}
-
+	
 	// Fetch the annotations of this shape
 	var xhr_object=new XMLHttpRequest();
 	xhr_object.open("GET","JSON/Annotations/"+shapeToDisplay+".json",false);
@@ -510,4 +513,196 @@ function compareAnnotations(a1,a2) {
 	}		
 	//console.log(res)
 	return res;
+}
+
+function mouseInTriangle(xA,yA,xB,yB,xC,yC,xm,ym,scale,offX,offY){
+	//scale*points[triangles[t].p1].x+offX,scale*points[triangles[t].p1].y+offY
+	xA = scale*xA+offX;
+	yA = scale*yA+offY; 
+	xB = scale*xB+offX;
+	yB = scale*yB+offY;
+	xC = scale*xC+offX;
+	yC = scale*yC+offY;
+	var xAM = xm-xA;
+    var yAM = ym-yA;
+    
+    var xAC = xC-xA;
+    var yAC = yC-yA;
+    
+    var xAB = xB-xA;
+    var yAB = yB-yA;
+    
+    var detAMAC = xAM * yAC - yAM * xAC;
+    var detABAC = xAB * yAC - yAB * xAC;
+    var detAMAB = xAM * yAB - yAM * xAB;
+    var detACAB = - detABAC;
+    
+    var x = detAMAC/detABAC;
+    var y = detAMAB/detACAB;
+	console.log(x);
+	console.log(x>=0 && y>=0);
+	console.log(x+y);
+    return x>=0 && y>=0 && x+y <=1;
+}
+
+
+function highlightParts(e) {
+    //console.log('blaff');
+    var auxId; 
+    if (e.srcElement == null) {
+        auxId = e.target.id;
+    } else {
+        auxId = e.srcElement.id; 
+    }    
+
+    var idCanvas = parseInt(auxId);
+	//console.log("coucou highlight");
+    
+	var canvas = document.getElementById(auxId);
+	var ctx = canvas.getContext('2d'),
+	// Position X du canvas
+	elemLeft = canvas.offsetLeft,
+	// Position Y du canvas
+	elemTop = canvas.offsetTop,
+	x,
+	y;
+	
+	//Position X du click (Position X du click sur la page moins la position X du canvas)
+	x = e.pageX - elemLeft,
+	// Position Y du click (Position Y du click sur la page moins la position Y du canvas)
+	y = e.pageY - elemTop;
+	//console.log(x);
+	var notdisplayed = 1;
+	var i = 0;
+	var numPart;
+	var points = currentShapeInfo.points;
+	console.log(currentShapeInfo.triangles.length)
+	while ( i<currentShapeInfo.triangles.length && notdisplayed){
+		var currentTriangle = currentShapeInfo.triangles[i];
+		console.log(i);
+		//console.log(currentTriangle);
+		if (mouseInTriangle(points[currentTriangle.p1].x,points[currentTriangle.p1].y,points[currentTriangle.p2].x,points[currentTriangle.p2].y,points[currentTriangle.p3].x,points[currentTriangle.p3].y,x,y,2*9*canSize/10,canSize/20,canSize/20)==1) {
+			numPart = currentPartsInfo.parts[i];
+			console.log(currentPartsInfo.parts[i]);
+			notdisplayed = 0;
+		}
+		i++;
+	}
+	if (numPart>=0){
+		console.log('about to draw part')
+		drawFilledPart(ctx,9*canSize*2/10,1,canSize/20,canSize/20,points,currentShapeInfo.triangles,currentPartsInfo.parts,currentPartsInfo.hierarchy,numPart);
+	}
+		/*
+	ctx.strokeStyle = "green";
+	ctx.lineWidth = 5;
+	ctx.strokeRect(0,0,canSize,canSize);
+	canvas.style = "cursor: pointer;";
+
+	var currentdisplay = document.getElementById('currentdisplay');
+	currentdisplay.innerHTML = selectedLabel + " - " + shapenames[idCanvas];*/
+
+    
+}
+
+
+function displayPartsHighlighted(partsToDisplay) {
+	
+	if (!popoverDisplayed) {
+		// Hide the popover that tells users to click on a shape
+		$('#canvascontainer').popover('hide');
+		popoverDisplayed = true;
+	}
+	console.log(partsToDisplay.split('_'));
+	console.log('coucou');
+	var shapeToDisplay = partsToDisplay.split('_')[0]; 
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Shapes/"+ shapeToDisplay +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		 if(xhr_object.readyState  == 4) {
+
+				currentShapeInfo = eval('('+xhr_object.responseText+')');
+			
+		 }
+	}; 
+	xhr_object.send(null);
+	
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Parts/"+ partsToDisplay +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		 if(xhr_object.readyState  == 4) {
+
+				currentPartsInfo = eval('('+xhr_object.responseText+')');
+			
+		 }
+	}; 
+	xhr_object.send(null);
+	
+	ShapeDisplayed = shapeToDisplay;
+
+// Clear the remaining canvas
+	for (var s = shapenames.length; s < nbCanvas ; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+		ctxToDraw.clearRect(0,0,canSize,canSize);
+	}
+	
+	var canvasContainer = document.getElementById("canvascontainer");
+	// Create new canvases to meet the requirements
+	var maincanva = document.createElement('canvas');
+	maincanva.setAttribute('id','maincanva');
+	maincanva.setAttribute('width',canSize*2);
+	maincanva.setAttribute('height',canSize*2);
+	canvasContainer.appendChild(maincanva);
+	var ctx = maincanva.getContext("2d");
+	// translate context to center of canvas
+	ctx.translate(0, canSize*2);
+	// flip context vertically
+	ctx.scale(1, -1);
+	
+	
+	// Draw the shapes on main canva
+	var canToDraw = document.getElementById("maincanva");
+	var ctxToDraw = canToDraw.getContext('2d');
+	
+	//drawFilledObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,annotations[s]);
+	// PARTIE D'ETIENNE AVEC TRACE DES CONTOURS DES PARTIES
+	drawObjectParts(ctxToDraw,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);
+	console.log("test");					
+	canToDraw.addEventListener('mousemove',highlightParts,false);
+	//canToDraw.removeEventListener('click',handlePartClick,false);
+	
+	canToDraw.style = "cursor: default;";
+
+
+/*
+	// Clear the remaining canvas
+	for (var s = annotations.length; s < nbCanvas ; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+		ctxToDraw.clearRect(0,0,canSize,canSize);
+
+		canToDraw.removeEventListener('onmouseover',highlightCanvas,false);
+		canToDraw.removeEventListener('click',handleShapeClick,false);
+		
+		canToDraw.style = "cursor: default;";
+		
+	}
+
+	// Remove event listeners on all canvases
+	for (var s = 0; s < nbCanvas ; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+
+		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
+		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
+		canToDraw.removeEventListener('click',handleShapeClick,false);
+		
+		canToDraw.style = "cursor: default;";
+	}
+
+	displayMajorityVote(shapeToDisplay);
+	displaySpectralClustering(shapeToDisplay);
+
+
+	displayElement('sidePanel');*/
+
 }
