@@ -160,3 +160,16 @@ function hideElement(idElement) {
 	var aux = document.getElementById(idElement);
 	aux.style = "display:none;"
 }
+
+function drawFilledPart(ctxToDraw,scale,width,offX,offY,points,triangles,parts,hierarchy,numPart) {
+    drawObjectParts(ctxToDraw,scale,width,offX,offY,points,triangles,parts);
+	console.log('shape drawn');
+	console.log(numPart);
+    for (var t=0;t<triangles.length-1;t++) {
+        if (parts[t]==numPart){
+            fillTriangle(ctxToDraw,t,scale,offX,offY,hierarchy[t],points,triangles);/////
+        }
+    }    
+
+
+}
