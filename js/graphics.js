@@ -210,6 +210,7 @@ function drawFilledPart(ctxToDraw,scale,width,offX,offY,points,triangles,parts,h
 			fillTriangle(ctxToDraw,t,scale,offX,offY,4,points,triangles);/////
 		}*/
     }    
+	drawPart(ctxToDraw,scale,width,offX,offY,points, trianglesFromPart(triangles,parts,numPart));
 
 
 }
