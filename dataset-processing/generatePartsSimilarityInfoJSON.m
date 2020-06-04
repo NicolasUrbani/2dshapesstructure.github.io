@@ -5,7 +5,7 @@
 load("userstudy2-processed.mat");
 
 nb_selections = size(selection, 1);
-for i=17:nb_selections
+for i=1:nb_selections
     %Get selection parameters
     id_selection = selection{i,1};
     shapename = selection{i,2};
@@ -25,7 +25,7 @@ for i=17:nb_selections
         annotations = partsannotation(find(partsannotation(:,3)== partIds(j)),:);
         for k=1:size(annotations,1)
             team_id = annotations(k,1);
-            ind_part = int2str(partIds(j) - globalOffset);
+            ind_part = int2str(partIds(j) +1 - globalOffset);
             ind_team = int2str(team_id);
             if (~isKey(similarities,ind_part))
                 similarities(ind_part) = containers.Map;
