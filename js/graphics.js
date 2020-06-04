@@ -133,8 +133,8 @@ function drawFilledObject(ctxToDraw,scale,width,offX,offY,points,triangles,annot
 }
 
 function drawSimilarities(ctxToDraw,scale,width,offX,offY,points,triangles,parts,part,similarities,context) {
-	console.log(similarities);
-	console.log(part);
+	//console.log(similarities);
+	//console.log(part);
 
 	drawObjectParts(ctxToDraw,scale,width,offX,offY,points,triangles,parts);
 
@@ -210,7 +210,7 @@ function drawFilledPart(ctxToDraw,scale,width,offX,offY,points,triangles,parts,h
 			fillTriangle(ctxToDraw,t,scale,offX,offY,4,points,triangles);/////
 		}*/
     }    
-	drawPart(ctxToDraw,scale,width,offX,offY,points, trianglesFromPart(triangles,parts,numPart));
+	drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesFromPart(triangles,parts,numPart));
 
 
 }
