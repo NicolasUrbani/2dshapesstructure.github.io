@@ -17,15 +17,15 @@ for i=1:nb_selections
     if fileID == -1
         disp(errmsg);
     end
-    text_buffer = strcat(text_buffer, "{similarity: [ ");
     %Find the partId of the parts in the selection
     partIds = find(parts(:,1) == id_selection);
+    globalOffset = min(partIds) - 1;
     for j=1:size(partIds,1)
         %Find all annotations with part j as part1
         annotations = partsannotation(find(partsannotation(:,3)== partIds(j)),:);
         for k=1:size(annotations,1)
             team_id = annotations(k,1);
-            ind_part = int2str(partIds(j));
+            ind_part = int2str(partIds(j) - globalOffset);
             ind_team = int2str(team_id);
             if (~isKey(similarities,ind_part))
                 similarities(ind_part) = containers.Map;
@@ -34,9 +34,9 @@ for i=1:nb_selections
             
             %Check if there was context
             if (annotations(k,2) ==1 )
-                key= "context";
+                key = "context";
             else
-                key  ="nocontext";
+                key ="nocontext";
             end
             
             idPart2 = annotations(k,4);
@@ -54,7 +54,7 @@ for i=1:nb_selections
                     if (~isKey(tmp,ind_team))
                         tmp(ind_team) = [];
                     end
-                    tmp(ind_team) = [tmp(ind_team) annotations(k,4)];
+                    tmp(ind_team) = [tmp(ind_team) (idPart2-globalOffset)];
                 end
             end
             part_map(key) = tmp;
