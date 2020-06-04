@@ -31,8 +31,8 @@ for i=1:size(selection,1)
     
     
     % Compute the affinity matrix of the annotations
-    [ affinity_matrix_with, affinity_matrix_without, n ] = computeAffinityMatrix(selection{i,1});
-%     [ affinity_matrix_with, affinity_matrix_without, n ] = computeAffinityMatrix_Yvette(selection{i,1});
+   % [ affinity_matrix_with, affinity_matrix_without, n ] = computeAffinityMatrix(selection{i,1});
+     [ affinity_matrix_with, affinity_matrix_without, n ] = computeAffinityMatrix_Yvette(selection{i,1});
     pause
     
     
