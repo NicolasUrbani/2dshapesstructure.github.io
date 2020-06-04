@@ -1,6 +1,6 @@
 var canSize = 200;
 
-var colors = ['black','magenta','green','red'];
+var colors = ['black','magenta','green','red','white'];
 
 function drawObject(ctxToDraw,scale,width,offX,offY,points) {
 
@@ -134,7 +134,8 @@ function drawFilledObject(ctxToDraw,scale,width,offX,offY,points,triangles,annot
 
 function fillTriangle(ctxToDraw,t,scale,offX,offY,col,points,triangles) {
 	
-
+	//console.log(colors[col]);
+	//console.log('bla');
 	ctxToDraw.fillStyle = colors[col];
 	ctxToDraw.strokeStyle = colors[col];
 	
@@ -162,13 +163,14 @@ function hideElement(idElement) {
 }
 
 function drawFilledPart(ctxToDraw,scale,width,offX,offY,points,triangles,parts,hierarchy,numPart) {
-    drawObjectParts(ctxToDraw,scale,width,offX,offY,points,triangles,parts);
-	console.log('shape drawn');
-	console.log(numPart);
-    for (var t=0;t<triangles.length-1;t++) {
+	//console.log(numPart);
+    for (var t=0;t<triangles.length;t++) {
         if (parts[t]==numPart){
             fillTriangle(ctxToDraw,t,scale,offX,offY,hierarchy[t],points,triangles);/////
-        }
+			//console.log('blabla');
+        }/* else {
+			fillTriangle(ctxToDraw,t,scale,offX,offY,4,points,triangles);/////
+		}*/
     }    
 
 

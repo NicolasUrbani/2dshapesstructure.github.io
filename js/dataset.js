@@ -19,6 +19,7 @@ var spectralColors = ['cornflowerblue','orange','beige','indigo'];
 var popoverDisplayed;
 
 var ShapeDisplayed;
+var numPartold;
 
 function doLoad() {
 	
@@ -26,6 +27,8 @@ function doLoad() {
 	
 	// Show the popover to help users
 	$('#labelswrapper').popover('show');
+	
+	numPartold = -1;
 	
 	nbCanvas = 0;
 	nbSpectralCanvas = 0;
@@ -126,6 +129,9 @@ function displayShapeCategory() {
 	currentdisplay.innerHTML = selectedLabel;
 	
 	var canvasContainer = document.getElementById("canvascontainer");
+
+	var mainCanva = document.getElementById("maincanva");
+	if (mainCanva!=null){mainCanva.remove();}
 
 	// Update the number of canvas
 	while (nbCanvas < shapenames.length) {
@@ -543,10 +549,10 @@ function mouseInTriangle(xA,yA,xB,yB,xC,yC,xm,ym,scale,offX,offY){
     
     var x = detAMAC/detABAC;
 	var y = detAMAB/detACAB;
-	console.log("scale = " + scale);
+	/*console.log("scale = " + scale);
 	console.log("xm = " + xM);
 	console.log("ym = " + yM);	
-	/*console.log("xa = " + xA);
+	console.log("xa = " + xA);
 	console.log("ya = " + yA);	
 	console.log("xb = " + xB);
 	console.log("yb = " + yB);	
@@ -598,14 +604,19 @@ function highlightParts(e) {
 		//console.log(currentTriangle);
 		if (mouseInTriangle(points[currentTriangle.p1].x,points[currentTriangle.p1].y,points[currentTriangle.p2].x,points[currentTriangle.p2].y,points[currentTriangle.p3].x,points[currentTriangle.p3].y,x,y,2*9*canSize/10,canSize/20,canSize/20)==1) {
 			numPart = currentPartsInfo.parts[i];
-			console.log(currentPartsInfo.parts[i]);
+			//console.log(currentPartsInfo.parts[i]);
 			notdisplayed = 0;
 		}
 		i++;
 	}
 	if (numPart>=0){
-		console.log('about to draw part')
-		drawFilledPart(ctx,9*canSize*2/10,1,canSize/20,canSize/20,points,currentShapeInfo.triangles,currentPartsInfo.parts,currentPartsInfo.hierarchy,numPart);
+		if (numPart!=numPartold){
+			numPartold=numPart;
+			ctx.clearRect(0,0,2*canSize,2*canSize);
+			drawObject(ctx,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);
+			//console.log('about to draw part')
+			drawFilledPart(ctx,9*canSize*2/10,1,canSize/20,canSize/20,points,currentShapeInfo.triangles,currentPartsInfo.parts,currentPartsInfo.hierarchy,numPart);
+		}
 	}
 		/*
 	ctx.strokeStyle = "green";
@@ -622,13 +633,26 @@ function highlightParts(e) {
 
 function displayPartsHighlighted(partsToDisplay) {
 	
+	//console.log("about to clear");
+	// Clear the remaining canvas
+	for (var s = 0; s < nbCanvas ; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+		ctxToDraw.clearRect(0,0,canSize,canSize);
+		canToDraw.remove();
+		
+	}
+	nbCanvas =0;
+	
+	console.log('cleared');
 	if (!popoverDisplayed) {
 		// Hide the popover that tells users to click on a shape
 		$('#canvascontainer').popover('hide');
 		popoverDisplayed = true;
+		
 	}
-	console.log(partsToDisplay.split('_'));
-	console.log('coucou');
+	//console.log(partsToDisplay.split('_'));
+	//console.log('coucou');
 	var shapeToDisplay = partsToDisplay.split('_')[0]; 
 	xhr_object=new XMLHttpRequest();
 	xhr_object.open("GET","JSON/Shapes/"+ shapeToDisplay +".json",false);
@@ -654,12 +678,7 @@ function displayPartsHighlighted(partsToDisplay) {
 	
 	ShapeDisplayed = shapeToDisplay;
 
-// Clear the remaining canvas
-	for (var s = shapenames.length; s < nbCanvas ; s++) {
-		var canToDraw = document.getElementById("canvas" + s);
-		var ctxToDraw = canToDraw.getContext('2d');
-		ctxToDraw.clearRect(0,0,canSize,canSize);
-	}
+
 	
 	var canvasContainer = document.getElementById("canvascontainer");
 	// Create new canvases to meet the requirements
@@ -682,42 +701,10 @@ function displayPartsHighlighted(partsToDisplay) {
 	//drawFilledObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,annotations[s]);
 	// PARTIE D'ETIENNE AVEC TRACE DES CONTOURS DES PARTIES
 	drawObjectParts(ctxToDraw,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);
-	console.log("test");					
+	//console.log("test");					
 	canToDraw.addEventListener('mousemove',highlightParts,false);
-	//canToDraw.removeEventListener('click',handlePartClick,false);
+	canToDraw.removeEventListener('click',handlePartClick,false);
 	
 	canToDraw.style = "cursor: default;";
-
-
-/*
-	// Clear the remaining canvas
-	for (var s = annotations.length; s < nbCanvas ; s++) {
-		var canToDraw = document.getElementById("canvas" + s);
-		var ctxToDraw = canToDraw.getContext('2d');
-		ctxToDraw.clearRect(0,0,canSize,canSize);
-
-		canToDraw.removeEventListener('onmouseover',highlightCanvas,false);
-		canToDraw.removeEventListener('click',handleShapeClick,false);
-		
-		canToDraw.style = "cursor: default;";
-		
-	}
-
-	// Remove event listeners on all canvases
-	for (var s = 0; s < nbCanvas ; s++) {
-		var canToDraw = document.getElementById("canvas" + s);
-
-		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
-		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
-		canToDraw.removeEventListener('click',handleShapeClick,false);
-		
-		canToDraw.style = "cursor: default;";
-	}
-
-	displayMajorityVote(shapeToDisplay);
-	displaySpectralClustering(shapeToDisplay);
-
-
-	displayElement('sidePanel');*/
 
 }
