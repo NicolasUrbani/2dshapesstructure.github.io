@@ -630,6 +630,9 @@ function highlightParts(e) {
     
 }
 
+function handlePartClick(e) {	
+	displayShapeSimilarities(ShapeDisplayed,numPartold);
+}
 
 function displayPartsHighlighted(partsToDisplay) {
 	
