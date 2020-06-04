@@ -544,8 +544,10 @@ function mouseInTriangle(xA,yA,xB,yB,xC,yC,xm,ym,scale,offX,offY){
 	xC = scale*xC+offX;
 	yC = scale*yC+offY;
 
+
+	var scrolled = window.scrollY;
 	var xM = xm;
-	var yM = 2*canSize - ym;
+	var yM = 2*canSize - ym + scrolled;
 
 	var xAM = xM-xA;
     var yAM = yM-yA;
