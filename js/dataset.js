@@ -132,11 +132,10 @@ function displayShapeCategory() {
 	
 	var canvasContainer = document.getElementById("canvascontainer");
 
-	var mainCanva = document.getElementById("maincanva");
-	if (mainCanva!=null){mainCanva.remove();}
-	
-	var legendCanva = document.getElementById("legendcanva");
-	if (legendCanva!=null){legendCanva.remove();}
+	if (document.getElementById("maincanva")!=null){document.getElementById("maincanva").remove();}
+	if (document.getElementById("legendcanva")!=null){document.getElementById("legendcanva").remove();}
+	if (document.getElementById("legcontcanva")!=null){document.getElementById("legcontcanva").remove();}
+	if (document.getElementById("legnocontcanva")!=null){document.getElementById("legnocontcanva").remove();}
 
 	// Update the number of canvas
 	while (nbCanvas < shapenames.length) {
@@ -322,6 +321,38 @@ function displayShapeSimilarities(shape, part) {
 	var canvasContainer = document.getElementById("canvascontainer");
 	var nbContext = Object.keys(similarities.context).length;
 	var nbNocontext = Object.keys(similarities.nocontext).length;
+	
+	
+	if (document.getElementById("legnocontcanva")!=null){document.getElementById("legnocontcanva").remove();}
+	for (var i=0; i<nbCanvas;i++){
+			document.getElementById('canvas'+i).remove();
+	
+	}
+	nbCanvas = 0;
+	
+	//Légend avec context
+	if (document.getElementById("legcontcanva")==null){
+	var legendContext = document.createElement('canvas');
+	legendContext.setAttribute('id','legcontcanva');
+	console.log(canvasContainer.clientWidth);
+	legendContext.setAttribute('width',canvasContainer.clientWidth);
+	legendContext.setAttribute('height',canSize/10);
+	canvasContainer.appendChild(legendContext);
+	
+	
+	var ctxl = legendContext.getContext('2d');
+	ctxl.fillStyle = "red";
+	ctxl.fillRect(canSize/20,0,5*canSize/20,2*canSize/20);
+	
+	ctxl.fillStyle = "green";
+	ctxl.fillRect(20*canSize/20,0,5*canSize/20,2*canSize/20);
+	
+	ctxl.fillStyle = "black";
+		  
+	ctxl.font = "bold 12pt Calibri,Geneva,Arial";
+	ctxl.fillText("selected part",7*canSize/20,1.5*canSize/20);
+	ctxl.fillText("parts judged similar with context",26*canSize/20,1.5*canSize/20);
+	}
 
 	// Update the number of canvas
 	while (nbCanvas < nbContext + nbNocontext) {
@@ -334,9 +365,19 @@ function displayShapeSimilarities(shape, part) {
 		canvasContainer.appendChild(auxCanvas);
 		var ctx = auxCanvas.getContext("2d");
 		// translate context to center of canvas
-	   ctx.translate(0, canSize);
+		ctx.translate(0, canSize);
 	   // flip context vertically
-	   ctx.scale(1, -1);
+		ctx.scale(1, -1);
+		if (nbNocontext!=0 && nbCanvas == nbContext){
+		 
+			var legend2Context = document.createElement('canvas');
+			legend2Context.setAttribute('id','legnocontcanva');
+			console.log("no context");
+			legend2Context.setAttribute('width',canvasContainer.clientWidth);
+			legend2Context.setAttribute('height',canSize/10);
+			canvasContainer.appendChild(legend2Context);
+		}
+		
 	}
 
 	var contextKeys = Object.keys(similarities.context);
@@ -353,7 +394,22 @@ function displayShapeSimilarities(shape, part) {
 			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.context[contextKeys[s]],true);
 
 		} else {
-
+			if (s==nbContext){
+				var legend2Context = document.getElementById("legnocontcanva");
+				var ctxl = legend2Context.getContext('2d');
+				ctxl.fillStyle = "red";
+				ctxl.fillRect(canSize/20,0,5*canSize/20,2*canSize/20);
+				
+				ctxl.fillStyle = "blue";
+				ctxl.fillRect(20*canSize/20,0,5*canSize/20,2*canSize/20);
+				
+				ctxl.fillStyle = "black";
+					  
+				ctxl.font = "bold 12pt Calibri,Geneva,Arial";
+				ctxl.fillText("selected part",7*canSize/20,1.5*canSize/20);
+				ctxl.fillText("parts judged similar without context",26*canSize/20,1.5*canSize/20);
+		
+			}
 			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.nocontext[nocontextKeys[s-nbContext]],false);
 
 		}
