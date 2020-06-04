@@ -56,7 +56,7 @@ for i=1:nb_selections
                     if (~isKey(tmp,ind_team))
                         tmp(ind_team) = [];
                     end
-                    tmp(ind_team) = [tmp(ind_team) (idPart2-globalOffset)];
+                    tmp(ind_team) = [tmp(ind_team) (idPart2-globalOffset+1)];
                 end
             end
             part_map(key) = tmp;
