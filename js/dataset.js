@@ -7,6 +7,7 @@ var shapenames;
 
 var currentShapeInfo;
 var currentPartsInfo;
+var PartsInfo;
 
 var annotations;
 
@@ -19,6 +20,7 @@ var spectralColors = ['cornflowerblue','orange','beige','indigo'];
 var popoverDisplayed;
 
 var ShapeDisplayed;
+var shapeName;
 var numPartold;
 
 function doLoad() {
@@ -262,51 +264,64 @@ function handleShapeClick(e) {
 
 	if (idCanvas < shapenames.length) {
 		var shapeToDisplay = shapenames[idCanvas];
-		//alert(shapeToDisplay);
 		displayPartsHighlighted(shapeToDisplay);
 		
 	}
 }
 
 
-function displayShapeAnnotations(shapeToDisplay) {
+function displayShapeSimilarities(shape, part) {
 	
 	if (!popoverDisplayed) {
 		// Hide the popover that tells users to click on a shape
 		$('#canvascontainer').popover('hide');
 		popoverDisplayed = true;
 	}
-	
+
 	// Fetch the annotations of this shape
 	var xhr_object=new XMLHttpRequest();
-	xhr_object.open("GET","JSON/Annotations/"+shapeToDisplay+".json",false);
-	annotations = null;
+	xhr_object.open("GET","JSON/PartsSimilarity/"+shape+".json",false);
+	similarities = null;
 	xhr_object.onreadystatechange  = function() { 
-	     if(xhr_object.readyState  == 4) {
-
-				var aux = eval('('+xhr_object.responseText+')');
-				annotations = aux.annotations;
+	    if(xhr_object.readyState  == 4) {
+			
+			var aux = eval('('+xhr_object.responseText+')');
+			similarities = aux[part.toString()];
 				
-	     }
+	    }
+	}; 
+	xhr_object.send(null);
+
+	var nameFile = shape.slice(0, shape.lastIndexOf("_"));
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Shapes/"+ nameFile +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+			
+			currentShapeInfo = eval('('+xhr_object.responseText+')');
+			
+		}
 	}; 
 	xhr_object.send(null);
 
 	xhr_object=new XMLHttpRequest();
-	xhr_object.open("GET","JSON/Shapes/"+ shapeToDisplay +".json",false);
+	xhr_object.open("GET","JSON/Parts/"+ shape +".json",false);
 	xhr_object.onreadystatechange  = function() { 
-		 if(xhr_object.readyState  == 4) {
-
-				currentShapeInfo = eval('('+xhr_object.responseText+')');
+		if(xhr_object.readyState  == 4) {
 			
-		 }
+			PartsInfo = eval('('+xhr_object.responseText+')');
+			
+		}
 	}; 
 	xhr_object.send(null);
 	
 
 	var canvasContainer = document.getElementById("canvascontainer");
+	var nbContext = Object.keys(similarities.context).length;
+	var nbNocontext = Object.keys(similarities.nocontext).length;
 
 	// Update the number of canvas
-	while (nbCanvas < annotations.length) {
+	while (nbCanvas < nbContext + nbNocontext) {
 		// Create new canvases to meet the requirements
 		var auxCanvas = document.createElement('canvas');
 		auxCanvas.setAttribute('id','canvas'+nbCanvas);
@@ -320,25 +335,30 @@ function displayShapeAnnotations(shapeToDisplay) {
 	   // flip context vertically
 	   ctx.scale(1, -1);
 	}
+
+	var contextKeys = Object.keys(similarities.context);
+	var nocontextKeys = Object.keys(similarities.nocontext);
 	
 	// Draw the shapes on each canvas
-	for (var s = 0; s < annotations.length;s++) {
-
+	for (var s = 0; s < nbContext + nbNocontext;s++) {
+		
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
-		drawFilledObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,annotations[s]);
+		
+		if (s < nbContext) {
 
-		
-		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
-		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
-		canToDraw.removeEventListener('click',handleShapeClick,false);
-		
-		canToDraw.style = "cursor: default;";
+			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.context[contextKeys[s]],true);
+
+		} else {
+
+			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.nocontext[nocontextKeys[s-nbContext]],false);
+
+		}
 
 	}
 
 	// Clear the remaining canvas
-	for (var s = annotations.length; s < nbCanvas ; s++) {
+	for (var s = nbContext + nbNocontext; s < nbCanvas ; s++) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
 		ctxToDraw.clearRect(0,0,canSize,canSize);
@@ -361,12 +381,6 @@ function displayShapeAnnotations(shapeToDisplay) {
 		
 		canToDraw.style = "cursor: default;";
 	}
-
-	displayMajorityVote(shapeToDisplay);
-	displaySpectralClustering(shapeToDisplay);
-
-
-	displayElement('sidePanel');
 
 }
 
@@ -630,8 +644,10 @@ function highlightParts(e) {
     
 }
 
-function handlePartClick(e) {	
-	displayShapeSimilarities(ShapeDisplayed,numPartold);
+function handlePartClick(e) {
+	if (numPartold != 1) {
+		displayShapeSimilarities(shapeName,numPartold);
+	}
 }
 
 function displayPartsHighlighted(partsToDisplay) {
@@ -647,7 +663,6 @@ function displayPartsHighlighted(partsToDisplay) {
 	}
 	nbCanvas =0;
 	
-	console.log('cleared');
 	if (!popoverDisplayed) {
 		// Hide the popover that tells users to click on a shape
 		$('#canvascontainer').popover('hide');
@@ -656,6 +671,7 @@ function displayPartsHighlighted(partsToDisplay) {
 	}
 	//console.log(partsToDisplay.split('_'));
 	//console.log('coucou');
+	shapeName = partsToDisplay;
 	var shapeToDisplay = partsToDisplay.split('_')[0]; 
 	xhr_object=new XMLHttpRequest();
 	xhr_object.open("GET","JSON/Shapes/"+ shapeToDisplay +".json",false);
@@ -706,7 +722,7 @@ function displayPartsHighlighted(partsToDisplay) {
 	drawObjectParts(ctxToDraw,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);
 	//console.log("test");					
 	canToDraw.addEventListener('mousemove',highlightParts,false);
-	canToDraw.removeEventListener('click',handlePartClick,false);
+	canToDraw.addEventListener('click',handlePartClick,false);
 	
 	canToDraw.style = "cursor: default;";
 

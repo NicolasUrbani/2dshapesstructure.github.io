@@ -1,6 +1,6 @@
 var canSize = 200;
 
-var colors = ['black','magenta','green','red','white'];
+var colors = ['black','magenta','green','red','blue'];
 
 function drawObject(ctxToDraw,scale,width,offX,offY,points) {
 
@@ -75,6 +75,9 @@ function isInteriorLine(p1,p2,trianglesPart,numTriangle) {
 
 function drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesPart) {
 
+	ctxToDraw.strokeStyle = 'black';
+	ctxToDraw.lineWidth = width;
+
 	for (var t=0; t< trianglesPart.length; t++) {
 
 		var triangle = trianglesPart[t];
@@ -100,14 +103,11 @@ function drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesPart) {
 			ctxToDraw.stroke();
 		}
 
-		ctxToDraw.stroke();	
 	}
 }
 
 function drawObjectParts(ctxToDraw,scale,width,offX,offY,points,triangles,parts) {
 
-	ctxToDraw.strokeStyle = 'black';
-	ctxToDraw.lineWidth = width;
 	ctxToDraw.clearRect(0,0,canSize,canSize);
 
 	var n = numPart(parts);
@@ -129,6 +129,44 @@ function drawFilledObject(ctxToDraw,scale,width,offX,offY,points,triangles,annot
 		fillTriangle(ctxToDraw,t,scale,offX,offY,annot[t],points,triangles);
 	}
 
+
+}
+
+function drawSimilarities(ctxToDraw,scale,width,offX,offY,points,triangles,parts,part,similarities,context) {
+	console.log(similarities);
+	console.log(part);
+
+	drawObjectParts(ctxToDraw,scale,width,offX,offY,points,triangles,parts);
+
+	var trianglesPart = trianglesFromPart(triangles,parts,part);
+	for(var t=0; t<trianglesPart.length; t++) {
+		fillTriangle(ctxToDraw,t,scale,offX,offY,3,points,trianglesPart);
+		drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesPart);
+	}
+
+	if (Array.isArray(similarities)) {
+		for (var s=0;s<similarities.length;s++) {
+			trianglesPart = trianglesFromPart(triangles,parts,similarities[s]);
+			var color = 2;
+			if (!context) {
+				color = 4
+			}
+			for(var t=0; t<trianglesPart.length; t++) {
+				fillTriangle(ctxToDraw,t,scale,offX,offY,color,points,trianglesPart);
+				drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesPart);
+			}
+		}
+	} else {
+		trianglesPart = trianglesFromPart(triangles,parts,similarities);
+		var color = 2;
+		if (!context) {
+			color = 4
+		}
+		for(var t=0; t<trianglesPart.length; t++) {
+			fillTriangle(ctxToDraw,t,scale,offX,offY,color,points,trianglesPart);
+			drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesPart);
+		}
+	}	
 
 }
 
