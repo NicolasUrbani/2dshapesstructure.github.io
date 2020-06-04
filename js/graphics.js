@@ -133,8 +133,6 @@ function drawFilledObject(ctxToDraw,scale,width,offX,offY,points,triangles,annot
 }
 
 function drawSimilarities(ctxToDraw,scale,width,offX,offY,points,triangles,parts,part,similarities,context) {
-	//console.log(similarities);
-	//console.log(part);
 
 	drawObjectParts(ctxToDraw,scale,width,offX,offY,points,triangles,parts);
 
@@ -172,8 +170,6 @@ function drawSimilarities(ctxToDraw,scale,width,offX,offY,points,triangles,parts
 
 function fillTriangle(ctxToDraw,t,scale,offX,offY,col,points,triangles) {
 	
-	//console.log(colors[col]);
-	//console.log('bla');
 	ctxToDraw.fillStyle = colors[col];
 	ctxToDraw.strokeStyle = colors[col];
 	
@@ -201,16 +197,57 @@ function hideElement(idElement) {
 }
 
 function drawFilledPart(ctxToDraw,scale,width,offX,offY,points,triangles,parts,hierarchy,numPart) {
-	//console.log(numPart);
+	
     for (var t=0;t<triangles.length;t++) {
         if (parts[t]==numPart){
             fillTriangle(ctxToDraw,t,scale,offX,offY,hierarchy[t],points,triangles);/////
-			//console.log('blabla');
-        }/* else {
-			fillTriangle(ctxToDraw,t,scale,offX,offY,4,points,triangles);/////
-		}*/
+			
+        }
     }    
 	drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesFromPart(triangles,parts,numPart));
 
 
+}
+
+function drawAffinityMatrix(ctxToDraw,scale,width,offX,offY,matrix) {	
+
+	var n = matrix.length;
+	var size = scale / n;
+
+	for (var i=0; i<n; i++){
+		for (var j=0; j<n; j++){
+			
+			var x = matrix[i][j];
+			var red = 0, green = 0, blue = 0;
+
+			if (x<=0.5) {
+				blue = 1-2*x;
+				green = 1-blue;
+			} else {
+				red = 2*x-1;
+				green = 1-red;
+			}
+
+			red = Math.round(255 * red);
+			green = Math.round(255 * green);
+			blue = Math.round(255 * blue);
+
+			ctxToDraw.fillStyle = 'rgb(' + parseInt(red,10) + ',' + parseInt(green,10) + ',' + parseInt(blue,10) + ')';
+			ctxToDraw.strokeStyle = 'rgb(' + parseInt(red,10) + ',' + parseInt(green,10) + ',' + parseInt(blue,10) + ')';
+
+			ctxToDraw.fillRect(offX+j*size,offY+i*size,size,size);
+		}
+	}
+	
+	ctxToDraw.strokeStyle = 'black';
+	ctxToDraw.lineWidth = width;
+
+	ctxToDraw.beginPath();
+	ctxToDraw.moveTo(offX, offY);
+	ctxToDraw.lineTo(offX+scale, offY);
+	ctxToDraw.lineTo(offX+scale, offY+scale);
+	ctxToDraw.lineTo(offX, offY+scale);
+	ctxToDraw.lineTo(offX, offY);
+	ctxToDraw.stroke();
+	ctxToDraw.closePath();
 }

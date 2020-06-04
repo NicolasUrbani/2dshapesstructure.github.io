@@ -72,18 +72,22 @@ function doLoad() {
 	var backButton = document.getElementById('BackButton');
 	backButton.addEventListener('click',backToShapeCategory,false);
 	
-	// Create canvas for majority vote
-	var majorityCanvasContainer = document.getElementById("majoritycanvascontainer");
+	// Create canvas for affinity matrices vote
+	var matricesCanvasContainer = document.getElementById("matricescanvascontainer");
+
 	var auxCanvas = document.createElement('canvas');
-	auxCanvas.setAttribute('id','majorityCanvas');
+	auxCanvas.setAttribute('id','contextmatrixCanvas');
 	auxCanvas.setAttribute('width',canSize);
 	auxCanvas.setAttribute('height',canSize);
-	majorityCanvasContainer.appendChild(auxCanvas);
+	matricesCanvasContainer.appendChild(auxCanvas);
 	var ctx = auxCanvas.getContext("2d");
-	// translate context to center of canvas
-   ctx.translate(0, canSize);
-   // flip context vertically
-   ctx.scale(1, -1);
+	  
+	var aux2Canvas = document.createElement('canvas');
+	aux2Canvas.setAttribute('id','nocontextmatrixCanvas');
+	aux2Canvas.setAttribute('width',canSize);
+	aux2Canvas.setAttribute('height',canSize);
+	matricesCanvasContainer.appendChild(aux2Canvas);
+	var ctx2 = aux2Canvas.getContext("2d");
 } 
 
 
@@ -271,6 +275,31 @@ function handleShapeClick(e) {
 	}
 }
 
+function displayAffinityMatrices(shape) {
+
+	displayElement('sidePanel');
+
+	// Fetch the matrices of this shape
+	var xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/AffinityMatrices/"+shape+".json",false);
+	xhr_object.onreadystatechange  = function() { 
+	    if(xhr_object.readyState  == 4) {
+			
+			matrices = eval('('+xhr_object.responseText+')');
+	    }
+	}; 
+	xhr_object.send(null);
+
+	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
+	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
+
+	var ctxToDrawContext = contextMatrixCanvas.getContext("2d");
+	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
+
+	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_with_context"]);
+	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_without_context"]);
+
+}
 
 function displayShapeSimilarities(shape, part) {
 	
@@ -735,7 +764,7 @@ function displayPartsHighlighted(partsToDisplay) {
 	//console.log(partsToDisplay.split('_'));
 	//console.log('coucou');
 	shapeName = partsToDisplay;
-	var shapeToDisplay = partsToDisplay.split('_')[0]; 
+	var shapeToDisplay = shapeName.slice(0, shapeName.lastIndexOf("_")); 
 	xhr_object=new XMLHttpRequest();
 	xhr_object.open("GET","JSON/Shapes/"+ shapeToDisplay +".json",false);
 	xhr_object.onreadystatechange  = function() { 
@@ -815,5 +844,7 @@ function displayPartsHighlighted(partsToDisplay) {
 	ctxl.fillText("main part (unclickable)",7*canSize/20,2.5*canSize/20);
 	ctxl.fillText("secondary parts",7*canSize/20,6*canSize/20);
 	ctxl.fillText("details",7*canSize/20,9.5*canSize/20);
+
+	displayAffinityMatrices(shapeToDisplay);
 
 }
