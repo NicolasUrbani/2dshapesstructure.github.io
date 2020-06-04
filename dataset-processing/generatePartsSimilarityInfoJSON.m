@@ -5,7 +5,7 @@
 load("userstudy2-processed.mat");
 
 nb_selections = size(selection, 1);
-for i=1:nb_selections
+for i=17:nb_selections
     %Get selection parameters
     id_selection = selection{i,1};
     shapename = selection{i,2};
@@ -40,13 +40,15 @@ for i=1:nb_selections
             end
             
             idPart2 = annotations(k,4);
+            if (~isKey(part_map,key))
+                part_map(key) = containers.Map;
+            end
+            tmp = part_map(key);
             if (~(idPart2 == -1))
                 
-                if (~isKey(part_map,key))
-                    part_map(key) = containers.Map;
-                end
                 
-                tmp = part_map(key);
+                
+                
                 
                 %Check if the two parts are from the same selection
                 %If they are, part2 is added to the similarity map
