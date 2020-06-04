@@ -134,6 +134,9 @@ function displayShapeCategory() {
 
 	var mainCanva = document.getElementById("maincanva");
 	if (mainCanva!=null){mainCanva.remove();}
+	
+	var legendCanva = document.getElementById("legendcanva");
+	if (legendCanva!=null){legendCanva.remove();}
 
 	// Update the number of canvas
 	while (nbCanvas < shapenames.length) {
@@ -710,6 +713,16 @@ function displayPartsHighlighted(partsToDisplay) {
 	maincanva.setAttribute('width',canSize*2);
 	maincanva.setAttribute('height',canSize*2);
 	canvasContainer.appendChild(maincanva);
+	
+	// Légende du schéma
+	var canvasContainer = document.getElementById("canvascontainer");
+	// Create new canvases to meet the requirements
+	var legendcanva = document.createElement('canvas');
+	legendcanva.setAttribute('id','legendcanva');
+	legendcanva.setAttribute('width',canSize*2);
+	legendcanva.setAttribute('height',canSize*2);
+	canvasContainer.appendChild(legendcanva);
+
 	var ctx = maincanva.getContext("2d");
 	// translate context to center of canvas
 	ctx.translate(0, canSize*2);
@@ -729,5 +742,22 @@ function displayPartsHighlighted(partsToDisplay) {
 	canToDraw.addEventListener('click',handlePartClick,false);
 	
 	canToDraw.style = "cursor: default;";
+	
+	var ctxl = legendcanva.getContext("2d");
+	ctxl.fillStyle = "black";
+	ctxl.fillRect(canSize/20,canSize/20,5*canSize/20,2*canSize/20);
+	
+	ctxl.fillStyle = "magenta";
+	ctxl.fillRect(canSize/20,4.5*canSize/20,5*canSize/20,2*canSize/20);
+	
+	ctxl.fillStyle = "green";
+	ctxl.fillRect(canSize/20,8*canSize/20,5*canSize/20,2*canSize/20);
+	
+	ctxl.fillStyle = "black";
+		  
+	ctxl.font = "bold 22pt Calibri,Geneva,Arial";
+	ctxl.fillText("main part (unclickable)",7*canSize/20,2.5*canSize/20);
+	ctxl.fillText("secondary parts",7*canSize/20,6*canSize/20);
+	ctxl.fillText("details",7*canSize/20,9.5*canSize/20);
 
 }
