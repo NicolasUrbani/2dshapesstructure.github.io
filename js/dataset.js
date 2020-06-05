@@ -26,6 +26,9 @@ var numPartold;
 var similarities;
 var intershape;
 
+var shapeIntername;
+var partIntername;
+
 var affinityMatrices;
 
 var nCol;
@@ -514,6 +517,25 @@ function displayShapeSimilarities(shape, part) {
 		
 	}
 
+	//Voir similar part from other shapes
+	var interKeys = Object.keys(intershape.nocontext);
+	var nbInter = interKeys.length;
+	if (document.getElementById("othershapelink")==null && nbInter>0){
+		shapeIntername=shape;
+		partIntername=part;
+		var otherlink = document.createElement('div');
+		var texte = document.createTextNode('Click here see the similar parts from OTHER shapes.');
+		otherlink.setAttribute('style','color: black'); //:hover { color= red }
+		otherlink.setAttribute('id','othershapelink');
+		otherlink.setAttribute('OnMouseOver','this.style.color="blue"');
+		otherlink.setAttribute('OnMouseOut','this.style.color="black"');
+		otherlink.appendChild(texte);
+		canvasContainer.appendChild(otherlink);
+		
+		otherlink.addEventListener('click',handleOtherShapeClick,false);
+	
+	}
+
 	var contextKeys = Object.keys(similarities.context);
 	var nocontextKeys = Object.keys(similarities.nocontext);
 	
@@ -550,64 +572,10 @@ function displayShapeSimilarities(shape, part) {
 
 	}
 
-	var interKeys = Object.keys(intershape.nocontext);
-	var nbInter = interKeys.length;
-	while (nbCanvas < nbContext + nbNocontext + nbInter) {
-		// Create new canvases to meet the requirements
-		var auxCanvas = document.createElement('canvas');
-		auxCanvas.setAttribute('id','canvas'+nbCanvas);
-		auxCanvas.setAttribute('width',canSize);
-		auxCanvas.setAttribute('height',canSize);
-		nbCanvas++;
-		canvasContainer.appendChild(auxCanvas);
-		var ctx = auxCanvas.getContext("2d");
-		// translate context to center of canvas
-		ctx.translate(0, canSize);
-	   // flip context vertically
-		ctx.scale(1, -1);		
-		
-	}
-
-	for (var s = nbContext + nbNocontext; s<nbContext + nbNocontext + nbInter; s++) {
-		var canToDraw = document.getElementById("canvas" + s);
-		var ctxToDraw = canToDraw.getContext('2d');
-
-		var interSimilar = intershape.nocontext[interKeys[s-(nbContext + nbNocontext)]];
-
-		var nameFile = interSimilar[0].slice(0, interSimilar[0].lastIndexOf("_"));
-		var extShapeInfo;
-		xhr_object=new XMLHttpRequest();
-		xhr_object.open("GET","JSON/Shapes/"+ nameFile +".json",false);
-		xhr_object.onreadystatechange  = function() { 
-			if(xhr_object.readyState  == 4) {
-				
-				extShapeInfo = eval('('+xhr_object.responseText+')');
-				
-			}
-		}; 
-		xhr_object.send(null);
-
-		var extPartsInfo;
-		xhr_object=new XMLHttpRequest();
-		xhr_object.open("GET","JSON/Parts/"+ interSimilar[0] +".json",false);
-		xhr_object.onreadystatechange  = function() { 
-			if(xhr_object.readyState  == 4) {
-				
-				extPartsInfo = eval('('+xhr_object.responseText+')');
-				
-			}
-		}; 
-		xhr_object.send(null);
-		
-		var interSimilarities = [];
-		for (var i = 1; i < interSimilar.length; i += 2) {
-			interSimilarities.push(interSimilar[i]);
-		}
-		drawSimilaritiesInter(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,extShapeInfo.points,extShapeInfo.triangles,extPartsInfo.parts,interSimilarities);
-	}
+	
 
 	// Clear the remaining canvas
-	for (var s = nbContext + nbNocontext + nbInter; s < nbCanvas ; s++) {
+	for (var s = nbContext + nbNocontext; s < nbCanvas ; s++) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
 		ctxToDraw.clearRect(0,0,canSize,canSize);
@@ -889,6 +857,94 @@ function highlightParts(e) {
 function handlePartClick(e) {
 	if (numPartold != 1) {
 		displayShapeSimilarities(shapeName,numPartold);
+	}
+}
+
+function handleOtherShapeClick(e) {
+		
+	var xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/PartsSimilarity/"+shapeIntername+".json",false);
+	xhr_object.onreadystatechange  = function() { 
+	    if(xhr_object.readyState  == 4) {
+			
+			var aux = eval('('+xhr_object.responseText+')');
+			similarities = aux["intrashape"][partIntername.toString()];
+			intershape = aux["intershape"][partIntername.toString()];
+				
+	    }
+	}; 
+	xhr_object.send(null);
+	var interKeys = Object.keys(intershape.nocontext);
+	var nbInter = interKeys.length;
+	var canvasContainer = document.getElementById("canvascontainer");
+	var nbContext = Object.keys(similarities.context).length;
+	var nbNocontext = Object.keys(similarities.nocontext).length;
+	while (nbCanvas < nbContext + nbNocontext + nbInter) {
+		// Create new canvases to meet the requirements
+		var auxCanvas = document.createElement('canvas');
+		auxCanvas.setAttribute('id','canvas'+nbCanvas);
+		auxCanvas.setAttribute('width',canSize);
+		auxCanvas.setAttribute('height',canSize);
+		nbCanvas++;
+		canvasContainer.appendChild(auxCanvas);
+		var ctx = auxCanvas.getContext("2d");
+		// translate context to center of canvas
+		ctx.translate(0, canSize);
+	   // flip context vertically
+		ctx.scale(1, -1);		
+		
+	}
+	
+	for (var s = nbContext + nbNocontext; s<nbContext + nbNocontext + nbInter; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+
+		var interSimilar = intershape.nocontext[interKeys[s-(nbContext + nbNocontext)]];
+
+		var nameFile = interSimilar[0].slice(0, interSimilar[0].lastIndexOf("_"));
+		var extShapeInfo;
+		xhr_object=new XMLHttpRequest();
+		xhr_object.open("GET","JSON/Shapes/"+ nameFile +".json",false);
+		xhr_object.onreadystatechange  = function() { 
+			if(xhr_object.readyState  == 4) {
+				
+				extShapeInfo = eval('('+xhr_object.responseText+')');
+				
+			}
+		}; 
+		xhr_object.send(null);
+
+		var extPartsInfo;
+		xhr_object=new XMLHttpRequest();
+		xhr_object.open("GET","JSON/Parts/"+ interSimilar[0] +".json",false);
+		xhr_object.onreadystatechange  = function() { 
+			if(xhr_object.readyState  == 4) {
+				
+				extPartsInfo = eval('('+xhr_object.responseText+')');
+				
+			}
+		}; 
+		xhr_object.send(null);
+		
+		var interSimilarities = [];
+		for (var i = 1; i < interSimilar.length; i += 2) {
+			interSimilarities.push(interSimilar[i]);
+		}
+		drawSimilaritiesInter(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,extShapeInfo.points,extShapeInfo.triangles,extPartsInfo.parts,interSimilarities);
+	}
+	
+	// Clear the remaining canvas
+	for (var s = nbContext + nbNocontext + nbInter; s < nbCanvas ; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+		ctxToDraw.clearRect(0,0,canSize,canSize);
+
+		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
+		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
+		canToDraw.removeEventListener('click',handleShapeClick,false);
+		
+		canToDraw.style = "cursor: default;";
+		
 	}
 }
 
