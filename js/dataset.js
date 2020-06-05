@@ -26,6 +26,9 @@ var numPartold;
 var similarities;
 var intershape;
 
+var shapeIntername;
+var partIntername;
+
 var affinityMatrices;
 
 var nCol;
@@ -83,6 +86,8 @@ function doLoad() {
 	// Create canvas for affinity matrices vote
 	var matricesCanvasContainer = document.getElementById("matricescanvascontainer");
 	
+	
+	
 	var auxCanvas = document.createElement('canvas');
 	auxCanvas.setAttribute('id','colorbar');
 	auxCanvas.setAttribute('width',canSize);
@@ -114,6 +119,13 @@ function doLoad() {
 	aux2Canvas.setAttribute('height',canSize);
 	matricesCanvasContainer.appendChild(aux2Canvas);
 	var ctx2 = aux2Canvas.getContext("2d");
+	
+	var divlink = document.createElement("div");
+	matricesCanvasContainer.appendChild(divlink);
+	var linka = document.createElement('a');
+	linka.setAttribute('href', 'https://deepai.org/machine-learning-glossary-and-terms/affinity-matrix');
+	linka.innerHTML='more about Affinity Matrix';
+	divlink.appendChild(linka);
 } 
 
 function handleClickCategory(e) {
@@ -165,6 +177,7 @@ function displayShapeCategory() {
 	if (document.getElementById("legendcanva")!=null){document.getElementById("legendcanva").remove();}
 	if (document.getElementById("legcontcanva")!=null){document.getElementById("legcontcanva").remove();}
 	if (document.getElementById("legnocontcanva")!=null){document.getElementById("legnocontcanva").remove();}
+	if (document.getElementById("othershapelink")!=null){document.getElementById("othershapelink").remove();}
 
 	// Update the number of canvas
 	while (nbCanvas < shapenames.length) {
@@ -222,11 +235,18 @@ function displayShapeCategory() {
 	}
 
 	// Clear the remaining canvas
+	var canDeleted = 0;
 	for (var s = shapenames.length; s < nbCanvas ; s++) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
-		ctxToDraw.clearRect(0,0,canSize,canSize);
+		//console.log(ctxToDraw.canvas.clientHeight);
+		ctxToDraw.clearRect(0,0,ctxToDraw.canvas.clientWidth,ctxToDraw.canvas.clientHeight);
+		canToDraw.style = "cursor: default;";
+		canToDraw.remove();
+		canDeleted++;
+		
 	}
+	nbCanvas = nbCanvas - canDeleted;
 	
 	// Show the popover that tells users to click on a shape
 	if (!popoverDisplayed) {
@@ -313,9 +333,10 @@ function highlightColumn(e) {
 
 	var elemLeft = rect.left;
 	var elemTop = rect.top;
-
+	
+	var scrolled = window.scrollY;
 	var x = e.pageX - elemLeft;
-	var y = e.pageY - elemTop;
+	var y = canSize - (e.pageY - elemTop) + scrolled;
 
 	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
 	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
@@ -325,9 +346,9 @@ function highlightColumn(e) {
 	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
 	var ctxToDrawMain = mainCanvas.getContext("2d");
 
-	if (x>=canSize/20 && x<= 19*canSize/20 && y>=canSize/20 && y<=19*canSize/20) {
-		x = x - canSize/20;
-		y = y - canSize/20;
+	if (x>=canSize/20 && x<= 19*canSize/20 && y>=(canSize/20) && y<=(19*canSize/20)) {
+		x = x - canSize/20 ;
+		y = y - canSize/20 ;
 		var size = 9*canSize/10/nCol;
 		var number = Math.floor(x/size);
 		if (number != numCol) {
@@ -415,6 +436,8 @@ function displayShapeSimilarities(shape, part) {
 		$('#canvascontainer').popover('hide');
 		popoverDisplayed = true;
 	}
+	
+	if (document.getElementById("othershapelink")!=null){document.getElementById("othershapelink").remove();}
 
 	// Fetch the annotations of this shape
 	var xhr_object=new XMLHttpRequest();
@@ -467,7 +490,7 @@ function displayShapeSimilarities(shape, part) {
 	nbCanvas = 0;
 	
 	//Légend avec context
-	if (document.getElementById("legcontcanva")==null){
+	if (document.getElementById("legcontcanva")==null &&nbContext>0){
 		var legendContext = document.createElement('canvas');
 		legendContext.setAttribute('id','legcontcanva');
 		legendContext.setAttribute('width',canvasContainer.clientWidth);
@@ -514,6 +537,25 @@ function displayShapeSimilarities(shape, part) {
 		
 	}
 
+	//see similar part from other shapes
+	var interKeys = Object.keys(intershape.nocontext);
+	var nbInter = interKeys.length;
+	if (document.getElementById("othershapelink")==null && nbInter>0){
+		shapeIntername=shape;
+		partIntername=part;
+		var otherlink = document.createElement('div');
+		var texte = document.createTextNode('Click here to see similar parts from OTHER shapes.');
+		otherlink.setAttribute('style','color: black');
+		otherlink.setAttribute('id','othershapelink');
+		otherlink.setAttribute('OnMouseOver','this.style.color="blue"');
+		otherlink.setAttribute('OnMouseOut','this.style.color="black"');
+		otherlink.appendChild(texte);
+		canvasContainer.appendChild(otherlink);
+		
+		otherlink.addEventListener('click',handleOtherShapeClick,false);
+	
+	}
+
 	var contextKeys = Object.keys(similarities.context);
 	var nocontextKeys = Object.keys(similarities.nocontext);
 	
@@ -550,64 +592,10 @@ function displayShapeSimilarities(shape, part) {
 
 	}
 
-	var interKeys = Object.keys(intershape.nocontext);
-	var nbInter = interKeys.length;
-	while (nbCanvas < nbContext + nbNocontext + nbInter) {
-		// Create new canvases to meet the requirements
-		var auxCanvas = document.createElement('canvas');
-		auxCanvas.setAttribute('id','canvas'+nbCanvas);
-		auxCanvas.setAttribute('width',canSize);
-		auxCanvas.setAttribute('height',canSize);
-		nbCanvas++;
-		canvasContainer.appendChild(auxCanvas);
-		var ctx = auxCanvas.getContext("2d");
-		// translate context to center of canvas
-		ctx.translate(0, canSize);
-	   // flip context vertically
-		ctx.scale(1, -1);		
-		
-	}
-
-	for (var s = nbContext + nbNocontext; s<nbContext + nbNocontext + nbInter; s++) {
-		var canToDraw = document.getElementById("canvas" + s);
-		var ctxToDraw = canToDraw.getContext('2d');
-
-		var interSimilar = intershape.nocontext[interKeys[s-(nbContext + nbNocontext)]];
-
-		var nameFile = interSimilar[0].slice(0, interSimilar[0].lastIndexOf("_"));
-		var extShapeInfo;
-		xhr_object=new XMLHttpRequest();
-		xhr_object.open("GET","JSON/Shapes/"+ nameFile +".json",false);
-		xhr_object.onreadystatechange  = function() { 
-			if(xhr_object.readyState  == 4) {
-				
-				extShapeInfo = eval('('+xhr_object.responseText+')');
-				
-			}
-		}; 
-		xhr_object.send(null);
-
-		var extPartsInfo;
-		xhr_object=new XMLHttpRequest();
-		xhr_object.open("GET","JSON/Parts/"+ interSimilar[0] +".json",false);
-		xhr_object.onreadystatechange  = function() { 
-			if(xhr_object.readyState  == 4) {
-				
-				extPartsInfo = eval('('+xhr_object.responseText+')');
-				
-			}
-		}; 
-		xhr_object.send(null);
-		
-		var interSimilarities = [];
-		for (var i = 1; i < interSimilar.length; i += 2) {
-			interSimilarities.push(interSimilar[i]);
-		}
-		drawSimilaritiesInter(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,extShapeInfo.points,extShapeInfo.triangles,extPartsInfo.parts,interSimilarities);
-	}
+	
 
 	// Clear the remaining canvas
-	for (var s = nbContext + nbNocontext + nbInter; s < nbCanvas ; s++) {
+	for (var s = nbContext + nbNocontext; s < nbCanvas ; s++) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
 		ctxToDraw.clearRect(0,0,canSize,canSize);
@@ -889,6 +877,99 @@ function highlightParts(e) {
 function handlePartClick(e) {
 	if (numPartold != 1) {
 		displayShapeSimilarities(shapeName,numPartold);
+	}
+}
+
+function handleOtherShapeClick(e) {
+		
+	var xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/PartsSimilarity/"+shapeIntername+".json",false);
+	xhr_object.onreadystatechange  = function() { 
+	    if(xhr_object.readyState  == 4) {
+			
+			var aux = eval('('+xhr_object.responseText+')');
+			similarities = aux["intrashape"][partIntername.toString()];
+			intershape = aux["intershape"][partIntername.toString()];
+				
+	    }
+	}; 
+	xhr_object.send(null);
+	var interKeys = Object.keys(intershape.nocontext);
+	var nbInter = interKeys.length;
+	var canvasContainer = document.getElementById("canvascontainer");
+	var nbContext = Object.keys(similarities.context).length;
+	var nbNocontext = Object.keys(similarities.nocontext).length;
+	while (nbCanvas < nbContext + nbNocontext + nbInter) {
+		// Create new canvases to meet the requirements
+		var auxCanvas = document.createElement('canvas');
+		auxCanvas.setAttribute('id','canvas'+nbCanvas);
+		auxCanvas.setAttribute('width',canSize);
+		auxCanvas.setAttribute('height',canSize + canSize/10);
+		nbCanvas++;
+		canvasContainer.appendChild(auxCanvas);
+		var ctx = auxCanvas.getContext("2d");
+		// translate context to center of canvas
+		ctx.translate(0, canSize);
+	   // flip context vertically
+		ctx.scale(1, -1);		
+		
+	}
+	
+	for (var s = nbContext + nbNocontext; s<nbContext + nbNocontext + nbInter; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+
+		var interSimilar = intershape.nocontext[interKeys[s-(nbContext + nbNocontext)]];
+
+		var nameFile = interSimilar[0].slice(0, interSimilar[0].lastIndexOf("_"));
+		var extShapeInfo;
+		xhr_object=new XMLHttpRequest();
+		xhr_object.open("GET","JSON/Shapes/"+ nameFile +".json",false);
+		xhr_object.onreadystatechange  = function() { 
+			if(xhr_object.readyState  == 4) {
+				
+				extShapeInfo = eval('('+xhr_object.responseText+')');
+				
+			}
+		}; 
+		xhr_object.send(null);
+
+		var extPartsInfo;
+		xhr_object=new XMLHttpRequest();
+		xhr_object.open("GET","JSON/Parts/"+ interSimilar[0] +".json",false);
+		xhr_object.onreadystatechange  = function() { 
+			if(xhr_object.readyState  == 4) {
+				
+				extPartsInfo = eval('('+xhr_object.responseText+')');
+				
+			}
+		}; 
+		xhr_object.send(null);
+		
+		var interSimilarities = [];
+		for (var i = 1; i < interSimilar.length; i += 2) {
+			interSimilarities.push(interSimilar[i]);
+		}
+		drawSimilaritiesInter(ctxToDraw,9*canSize/10,1,canSize/20,canSize/10,extShapeInfo.points,extShapeInfo.triangles,extPartsInfo.parts,interSimilarities);
+		ctxToDraw.scale(1,-1);
+		ctxToDraw.fillStyle = "black";
+		ctxToDraw.font = "18pt Calibri,Geneva,Arial";
+		ctxToDraw.fillText(nameFile,0,0);
+		
+	}
+	
+	// Clear the remaining canvas
+	for (var s = nbContext + nbNocontext + nbInter; s < nbCanvas ; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+		ctxToDraw.clearRect(0,0,canSize,canSize);
+
+		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
+		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
+		canToDraw.removeEventListener('click',handleShapeClick,false);
+		
+		canToDraw.style = "cursor: default;";
+		
 	}
 }
 
