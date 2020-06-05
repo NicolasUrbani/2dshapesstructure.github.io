@@ -185,7 +185,6 @@ function fillTriangle(ctxToDraw,t,scale,offX,offY,col,points,triangles) {
 
 }
 
-
 function displayElement(idElement) {
 	var aux = document.getElementById(idElement);
 	aux.style = "display:inline-block;"
@@ -207,6 +206,21 @@ function drawFilledPart(ctxToDraw,scale,width,offX,offY,points,triangles,parts,h
 	drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesFromPart(triangles,parts,numPart));
 
 
+}
+
+function drawColorbar(ctxColorbar) {	
+	let lineaire = ctxColorbar.createLinearGradient(0, 0, canSize, 0);//vrai largeur
+	lineaire.addColorStop(0.5,'rgb(0,255,0)'); //Vert
+	lineaire.addColorStop(0, 'rgb(0,0,255)'); //Bleu
+	lineaire.addColorStop(1, 'rgb(255,0,0)'); //Rouge
+
+	ctxColorbar.fillStyle = lineaire;
+	ctxColorbar.fillRect(0, 0, canSize, canSize/20); 
+	
+	ctxColorbar.fillStyle = "black";
+	ctxColorbar.font = "12pt Calibri,Geneva,Arial";
+	ctxColorbar.fillText('Low',0,5*canSize/40);
+	ctxColorbar.fillText('High',8.25*canSize/10,5*canSize/40);
 }
 
 function drawAffinityMatrix(ctxToDraw,scale,width,offX,offY,matrix) {	

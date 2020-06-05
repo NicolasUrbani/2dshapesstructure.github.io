@@ -76,6 +76,12 @@ function doLoad() {
 	var matricesCanvasContainer = document.getElementById("matricescanvascontainer");
 	
 	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','colorbar');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/5);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	
+	var auxCanvas = document.createElement('canvas');
 	auxCanvas.setAttribute('id','ContextTitle');
 	auxCanvas.setAttribute('width',canSize);
 	auxCanvas.setAttribute('height',canSize/10);
@@ -302,6 +308,12 @@ function displayAffinityMatrices(shape) {
 	}; 
 	xhr_object.send(null);
 
+	// Colorbar
+	var ctxColorbar = document.getElementById("colorbar").getContext("2d");
+	drawColorbar(ctxColorbar);
+
+
+	// Context and no context title before affinity matrices
 	var ctxContext = document.getElementById("ContextTitle").getContext("2d");
 	var ctxnocontext = document.getElementById("NoContextTitle").getContext("2d");
 	
@@ -315,7 +327,7 @@ function displayAffinityMatrices(shape) {
 	ctxnocontext.font = "18pt Calibri,Geneva,Arial";
 	ctxnocontext.fillText("No context",canSize/4,canSize/10);
 	
-
+	// Affinity matrices
 	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
 	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
 
