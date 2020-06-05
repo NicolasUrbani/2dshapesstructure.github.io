@@ -13,6 +13,8 @@ for i=1:nb_selections
     
     %HashMap to store the associations
     similarities = containers.Map;
+    similarities_inter = containers.Map;
+    
     [fileID, errmsg] = fopen(['JSON/PartsSimilarity/' shapename '_' int2str(shape_selection) '.json'],'w');
     if fileID == -1
         disp(errmsg);
@@ -30,7 +32,12 @@ for i=1:nb_selections
             if (~isKey(similarities,ind_part))
                 similarities(ind_part) = containers.Map;
             end
+            if (~isKey(similarities_inter,ind_part))
+                similarities_inter(ind_part) = containers.Map;
+            end
             part_map = similarities(ind_part);
+            part_map_inter = similarities_inter(ind_part);
+            
             
             %Check if there was context
             if (annotations(k,2) ==1 )
@@ -43,12 +50,13 @@ for i=1:nb_selections
             if (~isKey(part_map,key))
                 part_map(key) = containers.Map;
             end
+            if (~isKey(part_map_inter,key))
+                part_map_inter(key) = containers.Map;
+            end
             tmp = part_map(key);
+            tmp_inter = part_map_inter(key);
+            
             if (~(idPart2 == -1))
-                
-                
-                
-                
                 
                 %Check if the two parts are from the same selection
                 %If they are, part2 is added to the similarity map
@@ -56,16 +64,37 @@ for i=1:nb_selections
                     if (~isKey(tmp,ind_team))
                         tmp(ind_team) = [];
                     end
+                    %Put the team id and the local part number
                     tmp(ind_team) = [tmp(ind_team) (idPart2-globalOffset+1)];
+                    
+                    %part2 is from a different shape, we add it to the
+                    %intershape map
+                else
+                    if (~isKey(tmp_inter,ind_team))
+                        tmp_inter(ind_team) = [];
+                    end
+                    other_selection_id = parts(idPart2,1);
+                    if other_selection_id < nb_selections
+                        other_name = selection{other_selection_id,2};
+                        other_variant = selection{other_selection_id,3};
+                        new_data1 = {strcat(other_name, '_', int2str(other_variant))};
+                        new_data2 = parts(idPart2,2);
+                        tmp_inter(ind_team) = [tmp_inter(ind_team) [new_data1 new_data2]];
+                    end
                 end
             end
             part_map(key) = tmp;
+            part_map_inter(key) = tmp_inter;
             similarities(ind_part) = part_map;
+            similarities_inter(ind_part) = part_map_inter;
         end
     end
     
     %Generate the JSON file
-    json_txt = jsonencode(similarities);
+    data = containers.Map;
+    data("intrashape") = similarities;
+    data("intershape") = similarities_inter;
+    json_txt = jsonencode(data);
     json_txt = strrep(json_txt, ',', sprintf(',\r'));
     json_txt = strrep(json_txt, '[{', sprintf('[\r{\r'));
     json_txt = strrep(json_txt, '}]', sprintf('\r}\r]'));

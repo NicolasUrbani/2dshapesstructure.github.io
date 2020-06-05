@@ -168,6 +168,30 @@ function drawSimilarities(ctxToDraw,scale,width,offX,offY,points,triangles,parts
 
 }
 
+function drawSimilaritiesInter(ctxToDraw,scale,width,offX,offY,points,triangles,parts,similarities) {
+
+	drawObjectParts(ctxToDraw,scale,width,offX,offY,points,triangles,parts);
+
+	if (Array.isArray(similarities)) {
+		for (var s=0;s<similarities.length;s++) {
+			trianglesPart = trianglesFromPart(triangles,parts,similarities[s]);
+			var color = 4;
+			for(var t=0; t<trianglesPart.length; t++) {
+				fillTriangle(ctxToDraw,t,scale,offX,offY,color,points,trianglesPart);
+				drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesPart);
+			}
+		}
+	} else {
+		trianglesPart = trianglesFromPart(triangles,parts,similarities);
+		var color = 4;
+		for(var t=0; t<trianglesPart.length; t++) {
+			fillTriangle(ctxToDraw,t,scale,offX,offY,color,points,trianglesPart);
+			drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesPart);
+		}
+	}	
+
+}
+
 function fillTriangle(ctxToDraw,t,scale,offX,offY,col,points,triangles) {
 	
 	ctxToDraw.fillStyle = colors[col];
@@ -184,7 +208,6 @@ function fillTriangle(ctxToDraw,t,scale,offX,offY,col,points,triangles) {
 	ctxToDraw.closePath();
 
 }
-
 
 function displayElement(idElement) {
 	var aux = document.getElementById(idElement);
@@ -209,7 +232,39 @@ function drawFilledPart(ctxToDraw,scale,width,offX,offY,points,triangles,parts,h
 
 }
 
+function drawHighlightedColumn(ctxToDraw,scale,width,offX,offY,size,numCol) {
+
+	ctxToDraw.strokeStyle = 'gold';
+	ctxToDraw.lineWidth = width;
+
+	ctxToDraw.beginPath();
+	ctxToDraw.moveTo(offX+size*numCol, offY);
+	ctxToDraw.lineTo(offX+size*(numCol+1), offY);
+	ctxToDraw.lineTo(offX+size*(numCol+1), offY+scale);
+	ctxToDraw.lineTo(offX+size*numCol, offY+scale);
+	ctxToDraw.lineTo(offX+size*numCol, offY);
+	ctxToDraw.stroke();
+	ctxToDraw.closePath();
+}
+
+function drawColorbar(ctxColorbar) {	
+	let lineaire = ctxColorbar.createLinearGradient(0, 0, canSize, 0);//vrai largeur
+	lineaire.addColorStop(0.5,'rgb(0,255,0)'); //Vert
+	lineaire.addColorStop(0, 'rgb(0,0,255)'); //Bleu
+	lineaire.addColorStop(1, 'rgb(255,0,0)'); //Rouge
+
+	ctxColorbar.fillStyle = lineaire;
+	ctxColorbar.fillRect(0, 0, canSize, canSize/20); 
+	
+	ctxColorbar.fillStyle = "black";
+	ctxColorbar.font = "12pt Calibri,Geneva,Arial";
+	ctxColorbar.fillText('Low',0,5*canSize/40);
+	ctxColorbar.fillText('High',8.25*canSize/10,5*canSize/40);
+}
+
 function drawAffinityMatrix(ctxToDraw,scale,width,offX,offY,matrix) {	
+
+	ctxToDraw.clearRect(0,0,canSize,canSize);
 
 	var n = matrix.length;
 	var size = scale / n;

@@ -23,6 +23,17 @@ var ShapeDisplayed;
 var shapeName;
 var numPartold;
 
+var similarities;
+var intershape;
+
+var shapeIntername;
+var partIntername;
+
+var affinityMatrices;
+
+var nCol;
+var numCol = -1;
+
 function doLoad() {
 	
 	hideElement('sidePanel');
@@ -74,13 +85,33 @@ function doLoad() {
 	
 	// Create canvas for affinity matrices vote
 	var matricesCanvasContainer = document.getElementById("matricescanvascontainer");
-
+	
+	
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','colorbar');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/5);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','ContextTitle');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/10);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	
 	var auxCanvas = document.createElement('canvas');
 	auxCanvas.setAttribute('id','contextmatrixCanvas');
 	auxCanvas.setAttribute('width',canSize);
 	auxCanvas.setAttribute('height',canSize);
 	matricesCanvasContainer.appendChild(auxCanvas);
 	var ctx = auxCanvas.getContext("2d");
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','NoContextTitle');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/10);
+	matricesCanvasContainer.appendChild(auxCanvas);
 	  
 	var aux2Canvas = document.createElement('canvas');
 	aux2Canvas.setAttribute('id','nocontextmatrixCanvas');
@@ -88,8 +119,14 @@ function doLoad() {
 	aux2Canvas.setAttribute('height',canSize);
 	matricesCanvasContainer.appendChild(aux2Canvas);
 	var ctx2 = aux2Canvas.getContext("2d");
+	
+	var divlink = document.createElement("div");
+	matricesCanvasContainer.appendChild(divlink);
+	var linka = document.createElement('a');
+	linka.setAttribute('href', 'https://deepai.org/machine-learning-glossary-and-terms/affinity-matrix');
+	linka.innerHTML='more about Affinity Matrix';
+	divlink.appendChild(linka);
 } 
-
 
 function handleClickCategory(e) {
 
@@ -140,6 +177,7 @@ function displayShapeCategory() {
 	if (document.getElementById("legendcanva")!=null){document.getElementById("legendcanva").remove();}
 	if (document.getElementById("legcontcanva")!=null){document.getElementById("legcontcanva").remove();}
 	if (document.getElementById("legnocontcanva")!=null){document.getElementById("legnocontcanva").remove();}
+	if (document.getElementById("othershapelink")!=null){document.getElementById("othershapelink").remove();}
 
 	// Update the number of canvas
 	while (nbCanvas < shapenames.length) {
@@ -197,11 +235,18 @@ function displayShapeCategory() {
 	}
 
 	// Clear the remaining canvas
+	var canDeleted = 0;
 	for (var s = shapenames.length; s < nbCanvas ; s++) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
-		ctxToDraw.clearRect(0,0,canSize,canSize);
+		//console.log(ctxToDraw.canvas.clientHeight);
+		ctxToDraw.clearRect(0,0,ctxToDraw.canvas.clientWidth,ctxToDraw.canvas.clientHeight);
+		canToDraw.style = "cursor: default;";
+		canToDraw.remove();
+		canDeleted++;
+		
 	}
+	nbCanvas = nbCanvas - canDeleted;
 	
 	// Show the popover that tells users to click on a shape
 	if (!popoverDisplayed) {
@@ -209,7 +254,6 @@ function displayShapeCategory() {
 	}
 
 }
-
 
 function highlightCanvas(e) {
 	
@@ -257,7 +301,6 @@ function dehighlightCanvas(e) {
 	
 }
 
-
 function handleShapeClick(e) {
 	var auxId; 
 	if (e.srcElement == null) {
@@ -272,6 +315,62 @@ function handleShapeClick(e) {
 		var shapeToDisplay = shapenames[idCanvas];
 		displayPartsHighlighted(shapeToDisplay);
 		
+	}
+}
+
+function highlightColumn(e) {
+
+	var auxId; 
+	if (e.srcElement == null) {
+		auxId = e.target.id;
+	} else {
+		auxId = e.srcElement.id; 
+	}		
+	
+	var canvas = document.getElementById(auxId);
+
+	var rect = canvas.getBoundingClientRect();
+
+	var elemLeft = rect.left;
+	var elemTop = rect.top;
+	
+	var scrolled = window.scrollY;
+	var x = e.pageX - elemLeft;
+	var y = canSize - (e.pageY - elemTop) + scrolled;
+
+	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
+	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
+	var mainCanvas = document.getElementById("maincanva");
+
+	var ctxToDrawContext = contextMatrixCanvas.getContext("2d");
+	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
+	var ctxToDrawMain = mainCanvas.getContext("2d");
+
+	if (x>=canSize/20 && x<= 19*canSize/20 && y>=(canSize/20) && y<=(19*canSize/20)) {
+		x = x - canSize/20 ;
+		y = y - canSize/20 ;
+		var size = 9*canSize/10/nCol;
+		var number = Math.floor(x/size);
+		if (number != numCol) {
+
+			numCol = number;
+
+			drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_with_context"]);
+			drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_without_context"]);
+
+			drawHighlightedColumn(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
+			drawHighlightedColumn(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
+
+			ctxToDrawMain.clearRect(0,0,2*canSize,2*canSize);
+			drawObjectParts(ctxToDrawMain,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);	
+			drawFilledPart(ctxToDrawMain,9*canSize*2/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts,currentPartsInfo.hierarchy,numCol+2);
+		}		
+	}
+}
+
+function handleColumnClick(e) {
+	if (numCol+2 != 1) {
+		displayShapeSimilarities(shapeName,numCol+2);
 	}
 }
 
@@ -290,14 +389,43 @@ function displayAffinityMatrices(shape) {
 	}; 
 	xhr_object.send(null);
 
+	// Colorbar
+	var ctxColorbar = document.getElementById("colorbar").getContext("2d");
+	drawColorbar(ctxColorbar);
+
+
+	// Context and no context title before affinity matrices
+	var ctxContext = document.getElementById("ContextTitle").getContext("2d");
+	var ctxnocontext = document.getElementById("NoContextTitle").getContext("2d");
+	
+	
+	ctxContext.fillStyle = "black";
+	ctxContext.font = "18pt Calibri,Geneva,Arial";
+	ctxContext.fillText('Context',canSize/4,canSize/10);
+
+	
+	ctxnocontext.fillStyle = "black";
+	ctxnocontext.font = "18pt Calibri,Geneva,Arial";
+	ctxnocontext.fillText("No context",canSize/4,canSize/10);
+	
+	// Affinity matrices
 	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
 	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
 
 	var ctxToDrawContext = contextMatrixCanvas.getContext("2d");
 	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
 
+	nCol = matrices["matrix_with_context"].length;
+	affinityMatrices = matrices;	
+	
 	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_with_context"]);
 	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_without_context"]);
+
+	contextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
+	nocontextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
+	
+	contextMatrixCanvas.addEventListener('click',handleColumnClick,false);
+	nocontextMatrixCanvas.addEventListener('click',handleColumnClick,false);
 
 }
 
@@ -308,16 +436,18 @@ function displayShapeSimilarities(shape, part) {
 		$('#canvascontainer').popover('hide');
 		popoverDisplayed = true;
 	}
+	
+	if (document.getElementById("othershapelink")!=null){document.getElementById("othershapelink").remove();}
 
 	// Fetch the annotations of this shape
 	var xhr_object=new XMLHttpRequest();
 	xhr_object.open("GET","JSON/PartsSimilarity/"+shape+".json",false);
-	similarities = null;
 	xhr_object.onreadystatechange  = function() { 
 	    if(xhr_object.readyState  == 4) {
 			
 			var aux = eval('('+xhr_object.responseText+')');
-			similarities = aux[part.toString()];
+			similarities = aux["intrashape"][part.toString()];
+			intershape = aux["intershape"][part.toString()];
 				
 	    }
 	}; 
@@ -360,27 +490,26 @@ function displayShapeSimilarities(shape, part) {
 	nbCanvas = 0;
 	
 	//Légend avec context
-	if (document.getElementById("legcontcanva")==null){
-	var legendContext = document.createElement('canvas');
-	legendContext.setAttribute('id','legcontcanva');
-	console.log(canvasContainer.clientWidth);
-	legendContext.setAttribute('width',canvasContainer.clientWidth);
-	legendContext.setAttribute('height',canSize/10);
-	canvasContainer.appendChild(legendContext);
-	
-	
-	var ctxl = legendContext.getContext('2d');
-	ctxl.fillStyle = "red";
-	ctxl.fillRect(canSize/20,0,5*canSize/20,2*canSize/20);
-	
-	ctxl.fillStyle = "green";
-	ctxl.fillRect(20*canSize/20,0,5*canSize/20,2*canSize/20);
-	
-	ctxl.fillStyle = "black";
-		  
-	ctxl.font = "bold 12pt Calibri,Geneva,Arial";
-	ctxl.fillText("selected part",7*canSize/20,1.5*canSize/20);
-	ctxl.fillText("parts judged similar with context",26*canSize/20,1.5*canSize/20);
+	if (document.getElementById("legcontcanva")==null &&nbContext>0){
+		var legendContext = document.createElement('canvas');
+		legendContext.setAttribute('id','legcontcanva');
+		legendContext.setAttribute('width',canvasContainer.clientWidth);
+		legendContext.setAttribute('height',canSize/10);
+		canvasContainer.appendChild(legendContext);
+		
+		
+		var ctxl = legendContext.getContext('2d');
+		ctxl.fillStyle = "red";
+		ctxl.fillRect(canSize/20,0,5*canSize/20,2*canSize/20);
+		
+		ctxl.fillStyle = "green";
+		ctxl.fillRect(20*canSize/20,0,5*canSize/20,2*canSize/20);
+		
+		ctxl.fillStyle = "black";
+			
+		ctxl.font = "bold 12pt Calibri,Geneva,Arial";
+		ctxl.fillText("selected part",7*canSize/20,1.5*canSize/20);
+		ctxl.fillText("parts judged similar with context",26*canSize/20,1.5*canSize/20);
 	}
 
 	// Update the number of canvas
@@ -401,7 +530,6 @@ function displayShapeSimilarities(shape, part) {
 		 
 			var legend2Context = document.createElement('canvas');
 			legend2Context.setAttribute('id','legnocontcanva');
-			console.log("no context");
 			legend2Context.setAttribute('width',canvasContainer.clientWidth);
 			legend2Context.setAttribute('height',canSize/10);
 			canvasContainer.appendChild(legend2Context);
@@ -409,11 +537,30 @@ function displayShapeSimilarities(shape, part) {
 		
 	}
 
+	//see similar part from other shapes
+	var interKeys = Object.keys(intershape.nocontext);
+	var nbInter = interKeys.length;
+	if (document.getElementById("othershapelink")==null && nbInter>0){
+		shapeIntername=shape;
+		partIntername=part;
+		var otherlink = document.createElement('div');
+		var texte = document.createTextNode('Click here to see similar parts from OTHER shapes.');
+		otherlink.setAttribute('style','color: black');
+		otherlink.setAttribute('id','othershapelink');
+		otherlink.setAttribute('OnMouseOver','this.style.color="blue"');
+		otherlink.setAttribute('OnMouseOut','this.style.color="black"');
+		otherlink.appendChild(texte);
+		canvasContainer.appendChild(otherlink);
+		
+		otherlink.addEventListener('click',handleOtherShapeClick,false);
+	
+	}
+
 	var contextKeys = Object.keys(similarities.context);
 	var nocontextKeys = Object.keys(similarities.nocontext);
 	
 	// Draw the shapes on each canvas
-	for (var s = 0; s < nbContext + nbNocontext;s++) {
+	for (var s = 0; s < nbContext + nbNocontext; s++) {
 		
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
@@ -444,6 +591,8 @@ function displayShapeSimilarities(shape, part) {
 		}
 
 	}
+
+	
 
 	// Clear the remaining canvas
 	for (var s = nbContext + nbNocontext; s < nbCanvas ; s++) {
@@ -603,9 +752,6 @@ function displaySpectralClustering(shapeToDisplay) {
 }
 
 function compareAnnotations(a1,a2) {
-	//console.log('Comparing')
-	//console.log(a1)
-	//console.log(a2)
 	var res = true;
 	
 	if (a1.length == a2.length) {
@@ -619,7 +765,6 @@ function compareAnnotations(a1,a2) {
 	} else {
 		res = false;
 	}		
-	//console.log(res)
 	return res;
 }
 
@@ -653,21 +798,10 @@ function mouseInTriangle(xA,yA,xB,yB,xC,yC,xm,ym,scale,offX,offY){
     
     var x = detAMAC/detABAC;
 	var y = detAMAB/detACAB;
-	/*console.log("scale = " + scale);
-	console.log("xm = " + xM);
-	console.log("ym = " + yM);	
-	console.log("xa = " + xA);
-	console.log("ya = " + yA);	
-	console.log("xb = " + xB);
-	console.log("yb = " + yB);	
-	console.log("xc = " + xC);
-	console.log("yc = " + yC);*/
     return x>=0 && y>=0 && x+y <=1;
 }
 
-
 function highlightParts(e) {
-    //console.log('blaff');
     var auxId; 
     if (e.srcElement == null) {
         auxId = e.target.id;
@@ -676,7 +810,6 @@ function highlightParts(e) {
     }    
 
     var idCanvas = parseInt(auxId);
-	//console.log("coucou highlight");
     
 	var canvas = document.getElementById(auxId);
 	var ctx = canvas.getContext('2d'),
@@ -687,28 +820,25 @@ function highlightParts(e) {
 	elemTop = rect.top,
 	x,
 	y;
+
+	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
+	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
+
+	var ctxToDrawContext = contextMatrixCanvas.getContext("2d");
+	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
 	
 	//Position X du click (Position X du click sur la page moins la position X du canvas)
 	x = e.pageX - elemLeft,
 	// Position Y du click (Position Y du click sur la page moins la position Y du canvas)
 	y = e.pageY - elemTop;
-	//console.log("x = " + x);
-	//console.log("y = " + y)
-	//console.log(elemLeft);
-	//console.log(elemTop)
-	//console.log(x);
 	var notdisplayed = 1;
 	var i = 0;
 	var numPart;
 	var points = currentShapeInfo.points;
-	//console.log(currentShapeInfo.triangles.length)
 	while ( i<currentShapeInfo.triangles.length && notdisplayed){
 		var currentTriangle = currentShapeInfo.triangles[i];
-		//console.log(i);
-		//console.log(currentTriangle);
 		if (mouseInTriangle(points[currentTriangle.p1].x,points[currentTriangle.p1].y,points[currentTriangle.p2].x,points[currentTriangle.p2].y,points[currentTriangle.p3].x,points[currentTriangle.p3].y,x,y,2*9*canSize/10,canSize/20,canSize/20)==1) {
 			numPart = currentPartsInfo.parts[i];
-			//console.log(currentPartsInfo.parts[i]);
 			notdisplayed = 0;
 		}
 		i++;
@@ -717,11 +847,19 @@ function highlightParts(e) {
 		if (numPart!=numPartold){
 			numPartold=numPart;
 			ctx.clearRect(0,0,2*canSize,2*canSize);
-			//drawObject(ctx,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);
-			//console.log('about to draw part')
 			drawObjectParts(ctx,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);
 	
 			drawFilledPart(ctx,9*canSize*2/10,1,canSize/20,canSize/20,points,currentShapeInfo.triangles,currentPartsInfo.parts,currentPartsInfo.hierarchy,numPart);
+
+			if (numPart != 1) {
+				var size = 9*canSize/10/nCol;
+
+				drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_with_context"]);
+				drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_without_context"]);
+
+				drawHighlightedColumn(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,size,numPart-2);
+				drawHighlightedColumn(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,size,numPart-2);
+			}
 		}
 	}
 		/*
@@ -742,9 +880,101 @@ function handlePartClick(e) {
 	}
 }
 
+function handleOtherShapeClick(e) {
+		
+	var xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/PartsSimilarity/"+shapeIntername+".json",false);
+	xhr_object.onreadystatechange  = function() { 
+	    if(xhr_object.readyState  == 4) {
+			
+			var aux = eval('('+xhr_object.responseText+')');
+			similarities = aux["intrashape"][partIntername.toString()];
+			intershape = aux["intershape"][partIntername.toString()];
+				
+	    }
+	}; 
+	xhr_object.send(null);
+	var interKeys = Object.keys(intershape.nocontext);
+	var nbInter = interKeys.length;
+	var canvasContainer = document.getElementById("canvascontainer");
+	var nbContext = Object.keys(similarities.context).length;
+	var nbNocontext = Object.keys(similarities.nocontext).length;
+	while (nbCanvas < nbContext + nbNocontext + nbInter) {
+		// Create new canvases to meet the requirements
+		var auxCanvas = document.createElement('canvas');
+		auxCanvas.setAttribute('id','canvas'+nbCanvas);
+		auxCanvas.setAttribute('width',canSize);
+		auxCanvas.setAttribute('height',canSize + canSize/10);
+		nbCanvas++;
+		canvasContainer.appendChild(auxCanvas);
+		var ctx = auxCanvas.getContext("2d");
+		// translate context to center of canvas
+		ctx.translate(0, canSize);
+	   // flip context vertically
+		ctx.scale(1, -1);		
+		
+	}
+	
+	for (var s = nbContext + nbNocontext; s<nbContext + nbNocontext + nbInter; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+
+		var interSimilar = intershape.nocontext[interKeys[s-(nbContext + nbNocontext)]];
+
+		var nameFile = interSimilar[0].slice(0, interSimilar[0].lastIndexOf("_"));
+		var extShapeInfo;
+		xhr_object=new XMLHttpRequest();
+		xhr_object.open("GET","JSON/Shapes/"+ nameFile +".json",false);
+		xhr_object.onreadystatechange  = function() { 
+			if(xhr_object.readyState  == 4) {
+				
+				extShapeInfo = eval('('+xhr_object.responseText+')');
+				
+			}
+		}; 
+		xhr_object.send(null);
+
+		var extPartsInfo;
+		xhr_object=new XMLHttpRequest();
+		xhr_object.open("GET","JSON/Parts/"+ interSimilar[0] +".json",false);
+		xhr_object.onreadystatechange  = function() { 
+			if(xhr_object.readyState  == 4) {
+				
+				extPartsInfo = eval('('+xhr_object.responseText+')');
+				
+			}
+		}; 
+		xhr_object.send(null);
+		
+		var interSimilarities = [];
+		for (var i = 1; i < interSimilar.length; i += 2) {
+			interSimilarities.push(interSimilar[i]);
+		}
+		drawSimilaritiesInter(ctxToDraw,9*canSize/10,1,canSize/20,canSize/10,extShapeInfo.points,extShapeInfo.triangles,extPartsInfo.parts,interSimilarities);
+		ctxToDraw.scale(1,-1);
+		ctxToDraw.fillStyle = "black";
+		ctxToDraw.font = "18pt Calibri,Geneva,Arial";
+		ctxToDraw.fillText(nameFile,0,0);
+		
+	}
+	
+	// Clear the remaining canvas
+	for (var s = nbContext + nbNocontext + nbInter; s < nbCanvas ; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+		ctxToDraw.clearRect(0,0,canSize,canSize);
+
+		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
+		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
+		canToDraw.removeEventListener('click',handleShapeClick,false);
+		
+		canToDraw.style = "cursor: default;";
+		
+	}
+}
+
 function displayPartsHighlighted(partsToDisplay) {
 	
-	//console.log("about to clear");
 	// Clear the remaining canvas
 	for (var s = 0; s < nbCanvas ; s++) {
 		var canToDraw = document.getElementById("canvas" + s);
@@ -761,8 +991,6 @@ function displayPartsHighlighted(partsToDisplay) {
 		popoverDisplayed = true;
 		
 	}
-	//console.log(partsToDisplay.split('_'));
-	//console.log('coucou');
 	shapeName = partsToDisplay;
 	var shapeToDisplay = shapeName.slice(0, shapeName.lastIndexOf("_")); 
 	xhr_object=new XMLHttpRequest();
@@ -822,7 +1050,6 @@ function displayPartsHighlighted(partsToDisplay) {
 	//drawFilledObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,annotations[s]);
 	// PARTIE D'ETIENNE AVEC TRACE DES CONTOURS DES PARTIES
 	drawObjectParts(ctxToDraw,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);
-	//console.log("test");					
 	canToDraw.addEventListener('mousemove',highlightParts,false);
 	canToDraw.addEventListener('click',handlePartClick,false);
 	
