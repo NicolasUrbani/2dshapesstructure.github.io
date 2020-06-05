@@ -23,6 +23,11 @@ var ShapeDisplayed;
 var shapeName;
 var numPartold;
 
+var affinityMatrices;
+
+var nCol;
+var numCol = -1;
+
 function doLoad() {
 	
 	hideElement('sidePanel');
@@ -293,6 +298,61 @@ function handleShapeClick(e) {
 	}
 }
 
+function highlightColumn(e) {
+
+	var auxId; 
+	if (e.srcElement == null) {
+		auxId = e.target.id;
+	} else {
+		auxId = e.srcElement.id; 
+	}		
+	
+	var canvas = document.getElementById(auxId);
+
+	var rect = canvas.getBoundingClientRect();
+
+	var elemLeft = rect.left;
+	var elemTop = rect.top;
+
+	var x = e.pageX - elemLeft;
+	var y = e.pageY - elemTop;
+
+	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
+	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
+	var mainCanvas = document.getElementById("maincanva");
+
+	var ctxToDrawContext = contextMatrixCanvas.getContext("2d");
+	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
+	var ctxToDrawMain = mainCanvas.getContext("2d");
+
+	if (x>=canSize/20 && x<= 19*canSize/20 && y>=canSize/20 && y<=19*canSize/20) {
+		x = x - canSize/20;
+		y = y - canSize/20;
+		var size = 9*canSize/10/nCol;
+		var number = Math.floor(x/size);
+		if (number != numCol) {
+
+			numCol = number;
+
+			drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_with_context"]);
+			drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_without_context"]);
+
+			drawHighlightedColumn(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
+			drawHighlightedColumn(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
+
+			ctxToDrawMain.clearRect(0,0,2*canSize,2*canSize);
+			drawObjectParts(ctxToDrawMain,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);	
+			drawFilledPart(ctxToDrawMain,9*canSize*2/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts,currentPartsInfo.hierarchy,numCol+2);
+		}		
+	}
+}
+
+function handleColumnClick(e) {
+	if (numCol+2 != 1) {
+		displayShapeSimilarities(shapeName,numCol+2);
+	}
+}
+
 function displayAffinityMatrices(shape) {
 
 	displayElement('sidePanel');
@@ -333,10 +393,18 @@ function displayAffinityMatrices(shape) {
 
 	var ctxToDrawContext = contextMatrixCanvas.getContext("2d");
 	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
-	
+
+	nCol = matrices["matrix_with_context"].length;
+	affinityMatrices = matrices;	
 	
 	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_with_context"]);
 	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_without_context"]);
+
+	contextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
+	nocontextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
+	
+	contextMatrixCanvas.addEventListener('click',handleColumnClick,false);
+	nocontextMatrixCanvas.addEventListener('click',handleColumnClick,false);
 
 }
 
@@ -726,6 +794,12 @@ function highlightParts(e) {
 	elemTop = rect.top,
 	x,
 	y;
+
+	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
+	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
+
+	var ctxToDrawContext = contextMatrixCanvas.getContext("2d");
+	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
 	
 	//Position X du click (Position X du click sur la page moins la position X du canvas)
 	x = e.pageX - elemLeft,
@@ -761,6 +835,16 @@ function highlightParts(e) {
 			drawObjectParts(ctx,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);
 	
 			drawFilledPart(ctx,9*canSize*2/10,1,canSize/20,canSize/20,points,currentShapeInfo.triangles,currentPartsInfo.parts,currentPartsInfo.hierarchy,numPart);
+
+			if (numPart != 1) {
+				var size = 9*canSize/10/nCol;
+
+				drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_with_context"]);
+				drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_without_context"]);
+
+				drawHighlightedColumn(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,size,numPart-2);
+				drawHighlightedColumn(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,size,numPart-2);
+			}
 		}
 	}
 		/*

@@ -208,6 +208,21 @@ function drawFilledPart(ctxToDraw,scale,width,offX,offY,points,triangles,parts,h
 
 }
 
+function drawHighlightedColumn(ctxToDraw,scale,width,offX,offY,size,numCol) {
+
+	ctxToDraw.strokeStyle = 'gold';
+	ctxToDraw.lineWidth = width;
+
+	ctxToDraw.beginPath();
+	ctxToDraw.moveTo(offX+size*numCol, offY);
+	ctxToDraw.lineTo(offX+size*(numCol+1), offY);
+	ctxToDraw.lineTo(offX+size*(numCol+1), offY+scale);
+	ctxToDraw.lineTo(offX+size*numCol, offY+scale);
+	ctxToDraw.lineTo(offX+size*numCol, offY);
+	ctxToDraw.stroke();
+	ctxToDraw.closePath();
+}
+
 function drawColorbar(ctxColorbar) {	
 	let lineaire = ctxColorbar.createLinearGradient(0, 0, canSize, 0);//vrai largeur
 	lineaire.addColorStop(0.5,'rgb(0,255,0)'); //Vert
@@ -224,6 +239,8 @@ function drawColorbar(ctxColorbar) {
 }
 
 function drawAffinityMatrix(ctxToDraw,scale,width,offX,offY,matrix) {	
+
+	ctxToDraw.clearRect(0,0,canSize,canSize);
 
 	var n = matrix.length;
 	var size = scale / n;
