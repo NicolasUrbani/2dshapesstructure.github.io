@@ -69,7 +69,7 @@ function doLoad() {
 					auxButton.setAttribute('type','button');
 					auxButton.addEventListener('click',handleClickCategory,'false');
 					auxButton.appendChild(auxTextNode);
-					if (k<23) {
+					if (k<22) {
 						container.appendChild(auxButton);
 					} else {
 						container2.appendChild(auxButton);
@@ -475,11 +475,56 @@ function displayShapeSimilarities(shape, part) {
 		}
 	}; 
 	xhr_object.send(null);
+
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Ranking.json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+			
+			var aux = eval('('+xhr_object.responseText+')');
+			classement = aux.ranking;
+			
+		}
+	}; 
+	xhr_object.send(null);
+
+	drawSelectedSimilarities(shape, part);
+
+	var slider = document.getElementById("percentageslider");
+	slider.oninput = function() {
+		drawSelectedSimilarities(shapeName, NumPartOld);
+	}
+
+}
+
+function drawSelectedSimilarities(shape, part) {
+	var slider = document.getElementById("percentageslider");
+
+	var contextKeys = Object.keys(similarities.context);
+	var nocontextKeys = Object.keys(similarities.nocontext);
+
+	var selectedContextKeys = [];
+	var selectedNoContextKeys = [];
+
+	var classementLimite = Math.round((1-slider.value/100)*classement.length);
 	
+	for (var k = 0; k<contextKeys.length; k++) {
+		var teamId = contextKeys[k];
+		if (classement[parseInt(teamId,10)] >= classementLimite) {
+			selectedContextKeys.push(teamId);
+		}
+	}
+
+	for (var k = 0; k<nocontextKeys.length; k++) {
+		var teamId = nocontextKeys[k];
+		if (classement[parseInt(teamId,10)] >= classementLimite) {
+			selectedNoContextKeys.push(teamId);
+		}
+	}
 
 	var canvasContainer = document.getElementById("canvascontainer");
-	var nbContext = Object.keys(similarities.context).length;
-	var nbNocontext = Object.keys(similarities.nocontext).length;
+	var nbContext = Object.keys(selectedContextKeys).length;
+	var nbNocontext = Object.keys(selectedNoContextKeys).length;
 	
 	
 	if (document.getElementById("legnocontcanva")!=null){document.getElementById("legnocontcanva").remove();}
@@ -555,9 +600,6 @@ function displayShapeSimilarities(shape, part) {
 		otherlink.addEventListener('click',handleOtherShapeClick,false);
 	
 	}
-
-	var contextKeys = Object.keys(similarities.context);
-	var nocontextKeys = Object.keys(similarities.nocontext);
 	
 	// Draw the shapes on each canvas
 	for (var s = 0; s < nbContext + nbNocontext; s++) {
@@ -567,7 +609,7 @@ function displayShapeSimilarities(shape, part) {
 		
 		if (s < nbContext) {
 
-			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.context[contextKeys[s]],true);
+			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.context[selectedContextKeys[s]],true);
 
 		} else {
 			if (s==nbContext){
@@ -586,12 +628,11 @@ function displayShapeSimilarities(shape, part) {
 				ctxl.fillText("parts judged similar without context",26*canSize/20,1.5*canSize/20);
 		
 			}
-			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.nocontext[nocontextKeys[s-nbContext]],false);
+			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.nocontext[selectedNoContextKeys[s-nbContext]],false);
 
 		}
 
 	}
-
 	
 
 	// Clear the remaining canvas
