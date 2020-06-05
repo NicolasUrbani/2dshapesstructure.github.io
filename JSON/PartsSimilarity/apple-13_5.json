@@ -1,10 +1,1 @@
-{
-    "2": {
-        "context": {},
-        "nocontext": {}
-    },
-    "3": {
-        "context": {},
-        "nocontext": {}
-    }
-}
+{"intershape":{"2":{"context":{},"nocontext":{"1406":["image4_117",3],"1641":["image4_117",3],"2434":["image4_117",3],"437":["image4_117",3],"632":["image4_117",3],"740":["image4_117",3]}},"3":{"context":{},"nocontext":{"1015":["image4_117",2],"1155":["image4_117",2],"1676":["image4_117",2],"198":["image4_117",2],"2220":["image4_117",2],"2322":["image4_117",2],"388":["image4_117",2],"671":["image4_117",2]}}},"intrashape":{"2":{"context":{},"nocontext":{}},"3":{"context":{},"nocontext":{}}}}

@@ -1,16 +1,1 @@
-{
-    "2": {
-        "context": {},
-        "nocontext": {
-            "2189": 3,
-            "2294": 3,
-            "398": 3
-        }
-    },
-    "3": {
-        "context": {},
-        "nocontext": {
-            "583": 2
-        }
-    }
-}
+{"intershape":{"2":{"context":{},"nocontext":{}},"3":{"context":{},"nocontext":{}}},"intrashape":{"2":{"context":{},"nocontext":{"2189":3,"2294":3,"398":3}},"3":{"context":{},"nocontext":{"583":2}}}}
