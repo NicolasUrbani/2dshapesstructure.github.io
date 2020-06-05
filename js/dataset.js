@@ -74,13 +74,25 @@ function doLoad() {
 	
 	// Create canvas for affinity matrices vote
 	var matricesCanvasContainer = document.getElementById("matricescanvascontainer");
-
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','ContextTitle');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/10);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	
 	var auxCanvas = document.createElement('canvas');
 	auxCanvas.setAttribute('id','contextmatrixCanvas');
 	auxCanvas.setAttribute('width',canSize);
 	auxCanvas.setAttribute('height',canSize);
 	matricesCanvasContainer.appendChild(auxCanvas);
 	var ctx = auxCanvas.getContext("2d");
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','NoContextTitle');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/10);
+	matricesCanvasContainer.appendChild(auxCanvas);
 	  
 	var aux2Canvas = document.createElement('canvas');
 	aux2Canvas.setAttribute('id','nocontextmatrixCanvas');
@@ -290,12 +302,27 @@ function displayAffinityMatrices(shape) {
 	}; 
 	xhr_object.send(null);
 
+	var ctxContext = document.getElementById("ContextTitle").getContext("2d");
+	var ctxnocontext = document.getElementById("NoContextTitle").getContext("2d");
+	
+	
+	ctxContext.fillStyle = "black";
+	ctxContext.font = "18pt Calibri,Geneva,Arial";
+	ctxContext.fillText('Context',canSize/4,canSize/10);
+
+	
+	ctxnocontext.fillStyle = "black";
+	ctxnocontext.font = "18pt Calibri,Geneva,Arial";
+	ctxnocontext.fillText("No context",canSize/4,canSize/10);
+	
+
 	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
 	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
 
 	var ctxToDrawContext = contextMatrixCanvas.getContext("2d");
 	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
-
+	
+	
 	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_with_context"]);
 	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_without_context"]);
 
