@@ -470,7 +470,6 @@ function displayShapeSimilarities(shape, part) {
 	if (document.getElementById("legcontcanva")==null){
 	var legendContext = document.createElement('canvas');
 	legendContext.setAttribute('id','legcontcanva');
-	console.log(canvasContainer.clientWidth);
 	legendContext.setAttribute('width',canvasContainer.clientWidth);
 	legendContext.setAttribute('height',canSize/10);
 	canvasContainer.appendChild(legendContext);
@@ -508,7 +507,6 @@ function displayShapeSimilarities(shape, part) {
 		 
 			var legend2Context = document.createElement('canvas');
 			legend2Context.setAttribute('id','legnocontcanva');
-			console.log("no context");
 			legend2Context.setAttribute('width',canvasContainer.clientWidth);
 			legend2Context.setAttribute('height',canSize/10);
 			canvasContainer.appendChild(legend2Context);
@@ -710,9 +708,6 @@ function displaySpectralClustering(shapeToDisplay) {
 }
 
 function compareAnnotations(a1,a2) {
-	//console.log('Comparing')
-	//console.log(a1)
-	//console.log(a2)
 	var res = true;
 	
 	if (a1.length == a2.length) {
@@ -726,7 +721,6 @@ function compareAnnotations(a1,a2) {
 	} else {
 		res = false;
 	}		
-	//console.log(res)
 	return res;
 }
 
@@ -760,21 +754,11 @@ function mouseInTriangle(xA,yA,xB,yB,xC,yC,xm,ym,scale,offX,offY){
     
     var x = detAMAC/detABAC;
 	var y = detAMAB/detACAB;
-	/*console.log("scale = " + scale);
-	console.log("xm = " + xM);
-	console.log("ym = " + yM);	
-	console.log("xa = " + xA);
-	console.log("ya = " + yA);	
-	console.log("xb = " + xB);
-	console.log("yb = " + yB);	
-	console.log("xc = " + xC);
-	console.log("yc = " + yC);*/
     return x>=0 && y>=0 && x+y <=1;
 }
 
 
 function highlightParts(e) {
-    //console.log('blaff');
     var auxId; 
     if (e.srcElement == null) {
         auxId = e.target.id;
@@ -783,7 +767,6 @@ function highlightParts(e) {
     }    
 
     var idCanvas = parseInt(auxId);
-	//console.log("coucou highlight");
     
 	var canvas = document.getElementById(auxId);
 	var ctx = canvas.getContext('2d'),
@@ -805,23 +788,14 @@ function highlightParts(e) {
 	x = e.pageX - elemLeft,
 	// Position Y du click (Position Y du click sur la page moins la position Y du canvas)
 	y = e.pageY - elemTop;
-	//console.log("x = " + x);
-	//console.log("y = " + y)
-	//console.log(elemLeft);
-	//console.log(elemTop)
-	//console.log(x);
 	var notdisplayed = 1;
 	var i = 0;
 	var numPart;
 	var points = currentShapeInfo.points;
-	//console.log(currentShapeInfo.triangles.length)
 	while ( i<currentShapeInfo.triangles.length && notdisplayed){
 		var currentTriangle = currentShapeInfo.triangles[i];
-		//console.log(i);
-		//console.log(currentTriangle);
 		if (mouseInTriangle(points[currentTriangle.p1].x,points[currentTriangle.p1].y,points[currentTriangle.p2].x,points[currentTriangle.p2].y,points[currentTriangle.p3].x,points[currentTriangle.p3].y,x,y,2*9*canSize/10,canSize/20,canSize/20)==1) {
 			numPart = currentPartsInfo.parts[i];
-			//console.log(currentPartsInfo.parts[i]);
 			notdisplayed = 0;
 		}
 		i++;
@@ -830,8 +804,6 @@ function highlightParts(e) {
 		if (numPart!=numPartold){
 			numPartold=numPart;
 			ctx.clearRect(0,0,2*canSize,2*canSize);
-			//drawObject(ctx,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);
-			//console.log('about to draw part')
 			drawObjectParts(ctx,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);
 	
 			drawFilledPart(ctx,9*canSize*2/10,1,canSize/20,canSize/20,points,currentShapeInfo.triangles,currentPartsInfo.parts,currentPartsInfo.hierarchy,numPart);
@@ -867,7 +839,6 @@ function handlePartClick(e) {
 
 function displayPartsHighlighted(partsToDisplay) {
 	
-	//console.log("about to clear");
 	// Clear the remaining canvas
 	for (var s = 0; s < nbCanvas ; s++) {
 		var canToDraw = document.getElementById("canvas" + s);
@@ -884,8 +855,6 @@ function displayPartsHighlighted(partsToDisplay) {
 		popoverDisplayed = true;
 		
 	}
-	//console.log(partsToDisplay.split('_'));
-	//console.log('coucou');
 	shapeName = partsToDisplay;
 	var shapeToDisplay = shapeName.slice(0, shapeName.lastIndexOf("_")); 
 	xhr_object=new XMLHttpRequest();
@@ -945,7 +914,6 @@ function displayPartsHighlighted(partsToDisplay) {
 	//drawFilledObject(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,annotations[s]);
 	// PARTIE D'ETIENNE AVEC TRACE DES CONTOURS DES PARTIES
 	drawObjectParts(ctxToDraw,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);
-	//console.log("test");					
 	canToDraw.addEventListener('mousemove',highlightParts,false);
 	canToDraw.addEventListener('click',handlePartClick,false);
 	
