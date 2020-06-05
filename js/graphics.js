@@ -168,6 +168,30 @@ function drawSimilarities(ctxToDraw,scale,width,offX,offY,points,triangles,parts
 
 }
 
+function drawSimilaritiesInter(ctxToDraw,scale,width,offX,offY,points,triangles,parts,similarities) {
+
+	drawObjectParts(ctxToDraw,scale,width,offX,offY,points,triangles,parts);
+
+	if (Array.isArray(similarities)) {
+		for (var s=0;s<similarities.length;s++) {
+			trianglesPart = trianglesFromPart(triangles,parts,similarities[s]);
+			var color = 4;
+			for(var t=0; t<trianglesPart.length; t++) {
+				fillTriangle(ctxToDraw,t,scale,offX,offY,color,points,trianglesPart);
+				drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesPart);
+			}
+		}
+	} else {
+		trianglesPart = trianglesFromPart(triangles,parts,similarities);
+		var color = 4;
+		for(var t=0; t<trianglesPart.length; t++) {
+			fillTriangle(ctxToDraw,t,scale,offX,offY,color,points,trianglesPart);
+			drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesPart);
+		}
+	}	
+
+}
+
 function fillTriangle(ctxToDraw,t,scale,offX,offY,col,points,triangles) {
 	
 	ctxToDraw.fillStyle = colors[col];

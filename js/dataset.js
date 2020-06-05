@@ -23,6 +23,9 @@ var ShapeDisplayed;
 var shapeName;
 var numPartold;
 
+var similarities;
+var intershape;
+
 var affinityMatrices;
 
 var nCol;
@@ -112,7 +115,6 @@ function doLoad() {
 	matricesCanvasContainer.appendChild(aux2Canvas);
 	var ctx2 = aux2Canvas.getContext("2d");
 } 
-
 
 function handleClickCategory(e) {
 
@@ -233,7 +235,6 @@ function displayShapeCategory() {
 
 }
 
-
 function highlightCanvas(e) {
 	
 	var auxId; 
@@ -279,7 +280,6 @@ function dehighlightCanvas(e) {
 	currentdisplay.innerHTML = selectedLabel;
 	
 }
-
 
 function handleShapeClick(e) {
 	var auxId; 
@@ -419,12 +419,12 @@ function displayShapeSimilarities(shape, part) {
 	// Fetch the annotations of this shape
 	var xhr_object=new XMLHttpRequest();
 	xhr_object.open("GET","JSON/PartsSimilarity/"+shape+".json",false);
-	similarities = null;
 	xhr_object.onreadystatechange  = function() { 
 	    if(xhr_object.readyState  == 4) {
 			
 			var aux = eval('('+xhr_object.responseText+')');
-			similarities = aux[part.toString()];
+			similarities = aux["intrashape"][part.toString()];
+			intershape = aux["intershape"][part.toString()];
 				
 	    }
 	}; 
@@ -468,25 +468,25 @@ function displayShapeSimilarities(shape, part) {
 	
 	//Légend avec context
 	if (document.getElementById("legcontcanva")==null){
-	var legendContext = document.createElement('canvas');
-	legendContext.setAttribute('id','legcontcanva');
-	legendContext.setAttribute('width',canvasContainer.clientWidth);
-	legendContext.setAttribute('height',canSize/10);
-	canvasContainer.appendChild(legendContext);
-	
-	
-	var ctxl = legendContext.getContext('2d');
-	ctxl.fillStyle = "red";
-	ctxl.fillRect(canSize/20,0,5*canSize/20,2*canSize/20);
-	
-	ctxl.fillStyle = "green";
-	ctxl.fillRect(20*canSize/20,0,5*canSize/20,2*canSize/20);
-	
-	ctxl.fillStyle = "black";
-		  
-	ctxl.font = "bold 12pt Calibri,Geneva,Arial";
-	ctxl.fillText("selected part",7*canSize/20,1.5*canSize/20);
-	ctxl.fillText("parts judged similar with context",26*canSize/20,1.5*canSize/20);
+		var legendContext = document.createElement('canvas');
+		legendContext.setAttribute('id','legcontcanva');
+		legendContext.setAttribute('width',canvasContainer.clientWidth);
+		legendContext.setAttribute('height',canSize/10);
+		canvasContainer.appendChild(legendContext);
+		
+		
+		var ctxl = legendContext.getContext('2d');
+		ctxl.fillStyle = "red";
+		ctxl.fillRect(canSize/20,0,5*canSize/20,2*canSize/20);
+		
+		ctxl.fillStyle = "green";
+		ctxl.fillRect(20*canSize/20,0,5*canSize/20,2*canSize/20);
+		
+		ctxl.fillStyle = "black";
+			
+		ctxl.font = "bold 12pt Calibri,Geneva,Arial";
+		ctxl.fillText("selected part",7*canSize/20,1.5*canSize/20);
+		ctxl.fillText("parts judged similar with context",26*canSize/20,1.5*canSize/20);
 	}
 
 	// Update the number of canvas
@@ -518,7 +518,7 @@ function displayShapeSimilarities(shape, part) {
 	var nocontextKeys = Object.keys(similarities.nocontext);
 	
 	// Draw the shapes on each canvas
-	for (var s = 0; s < nbContext + nbNocontext;s++) {
+	for (var s = 0; s < nbContext + nbNocontext; s++) {
 		
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
@@ -550,8 +550,64 @@ function displayShapeSimilarities(shape, part) {
 
 	}
 
+	var interKeys = Object.keys(intershape.nocontext);
+	var nbInter = interKeys.length;
+	while (nbCanvas < nbContext + nbNocontext + nbInter) {
+		// Create new canvases to meet the requirements
+		var auxCanvas = document.createElement('canvas');
+		auxCanvas.setAttribute('id','canvas'+nbCanvas);
+		auxCanvas.setAttribute('width',canSize);
+		auxCanvas.setAttribute('height',canSize);
+		nbCanvas++;
+		canvasContainer.appendChild(auxCanvas);
+		var ctx = auxCanvas.getContext("2d");
+		// translate context to center of canvas
+		ctx.translate(0, canSize);
+	   // flip context vertically
+		ctx.scale(1, -1);		
+		
+	}
+
+	for (var s = nbContext + nbNocontext; s<nbContext + nbNocontext + nbInter; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+
+		var interSimilar = intershape.nocontext[interKeys[s-(nbContext + nbNocontext)]];
+
+		var nameFile = interSimilar[0].slice(0, interSimilar[0].lastIndexOf("_"));
+		var extShapeInfo;
+		xhr_object=new XMLHttpRequest();
+		xhr_object.open("GET","JSON/Shapes/"+ nameFile +".json",false);
+		xhr_object.onreadystatechange  = function() { 
+			if(xhr_object.readyState  == 4) {
+				
+				extShapeInfo = eval('('+xhr_object.responseText+')');
+				
+			}
+		}; 
+		xhr_object.send(null);
+
+		var extPartsInfo;
+		xhr_object=new XMLHttpRequest();
+		xhr_object.open("GET","JSON/Parts/"+ interSimilar[0] +".json",false);
+		xhr_object.onreadystatechange  = function() { 
+			if(xhr_object.readyState  == 4) {
+				
+				extPartsInfo = eval('('+xhr_object.responseText+')');
+				
+			}
+		}; 
+		xhr_object.send(null);
+		
+		var interSimilarities = [];
+		for (var i = 1; i < interSimilar.length; i += 2) {
+			interSimilarities.push(interSimilar[i]);
+		}
+		drawSimilaritiesInter(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,extShapeInfo.points,extShapeInfo.triangles,extPartsInfo.parts,interSimilarities);
+	}
+
 	// Clear the remaining canvas
-	for (var s = nbContext + nbNocontext; s < nbCanvas ; s++) {
+	for (var s = nbContext + nbNocontext + nbInter; s < nbCanvas ; s++) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
 		ctxToDraw.clearRect(0,0,canSize,canSize);
@@ -756,7 +812,6 @@ function mouseInTriangle(xA,yA,xB,yB,xC,yC,xm,ym,scale,offX,offY){
 	var y = detAMAB/detACAB;
     return x>=0 && y>=0 && x+y <=1;
 }
-
 
 function highlightParts(e) {
     var auxId; 
