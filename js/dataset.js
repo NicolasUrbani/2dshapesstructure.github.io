@@ -935,8 +935,21 @@ function handleOtherShapeClick(e) {
 	    }
 	}; 
 	xhr_object.send(null);
+
 	var interKeys = Object.keys(intershape.nocontext);
-	var nbInter = interKeys.length;
+	var interKeysSelected = [];
+	var slider = document.getElementById("percentageslider");
+
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+	
+	for (var k = 0; k<interKeys.length; k++) {
+		var teamId = interKeys[k];
+		if (classement["ranking_without"][parseInt(teamId,10)] >= classementLimite) {
+			interKeysSelected.push(teamId);
+		}
+	}
+
+	var nbInter = interKeysSelected.length;
 	var canvasContainer = document.getElementById("canvascontainer");
 	var nbContext = Object.keys(similarities.context).length;
 	var nbNocontext = Object.keys(similarities.nocontext).length;
@@ -960,7 +973,7 @@ function handleOtherShapeClick(e) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
 
-		var interSimilar = intershape.nocontext[interKeys[s-(nbContext + nbNocontext)]];
+		var interSimilar = intershape.nocontext[interKeysSelected[s-(nbContext + nbNocontext)]];
 
 		var nameFile = interSimilar[0].slice(0, interSimilar[0].lastIndexOf("_"));
 		var extShapeInfo;
