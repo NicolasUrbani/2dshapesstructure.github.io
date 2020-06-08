@@ -25,6 +25,7 @@ var numPartold;
 
 var similarities;
 var intershape;
+var classement;
 
 var shapeIntername;
 var partIntername;
@@ -477,12 +478,11 @@ function displayShapeSimilarities(shape, part) {
 	xhr_object.send(null);
 
 	xhr_object=new XMLHttpRequest();
-	xhr_object.open("GET","JSON/Ranking.json",false);
+	xhr_object.open("GET","JSON/ranking.json",false);
 	xhr_object.onreadystatechange  = function() { 
 		if(xhr_object.readyState  == 4) {
 			
-			var aux = eval('('+xhr_object.responseText+')');
-			classement = aux.ranking;
+			classement = eval('('+xhr_object.responseText+')');
 			
 		}
 	}; 
@@ -492,7 +492,7 @@ function displayShapeSimilarities(shape, part) {
 
 	var slider = document.getElementById("percentageslider");
 	slider.oninput = function() {
-		drawSelectedSimilarities(shapeName, NumPartOld);
+		drawSelectedSimilarities(shapeName, numPartold);
 	}
 
 }
@@ -506,18 +506,18 @@ function drawSelectedSimilarities(shape, part) {
 	var selectedContextKeys = [];
 	var selectedNoContextKeys = [];
 
-	var classementLimite = Math.round((1-slider.value/100)*classement.length);
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
 	
 	for (var k = 0; k<contextKeys.length; k++) {
 		var teamId = contextKeys[k];
-		if (classement[parseInt(teamId,10)] >= classementLimite) {
+		if (classement["ranking_with"][parseInt(teamId,10)] >= classementLimite) {
 			selectedContextKeys.push(teamId);
 		}
 	}
 
 	for (var k = 0; k<nocontextKeys.length; k++) {
 		var teamId = nocontextKeys[k];
-		if (classement[parseInt(teamId,10)] >= classementLimite) {
+		if (classement["ranking_without"][parseInt(teamId,10)] >= classementLimite) {
 			selectedNoContextKeys.push(teamId);
 		}
 	}
@@ -935,8 +935,21 @@ function handleOtherShapeClick(e) {
 	    }
 	}; 
 	xhr_object.send(null);
+
 	var interKeys = Object.keys(intershape.nocontext);
-	var nbInter = interKeys.length;
+	var interKeysSelected = [];
+	var slider = document.getElementById("percentageslider");
+
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+	
+	for (var k = 0; k<interKeys.length; k++) {
+		var teamId = interKeys[k];
+		if (classement["ranking_without"][parseInt(teamId,10)] >= classementLimite) {
+			interKeysSelected.push(teamId);
+		}
+	}
+
+	var nbInter = interKeysSelected.length;
 	var canvasContainer = document.getElementById("canvascontainer");
 	var nbContext = Object.keys(similarities.context).length;
 	var nbNocontext = Object.keys(similarities.nocontext).length;
@@ -960,7 +973,7 @@ function handleOtherShapeClick(e) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
 
-		var interSimilar = intershape.nocontext[interKeys[s-(nbContext + nbNocontext)]];
+		var interSimilar = intershape.nocontext[interKeysSelected[s-(nbContext + nbNocontext)]];
 
 		var nameFile = interSimilar[0].slice(0, interSimilar[0].lastIndexOf("_"));
 		var extShapeInfo;
