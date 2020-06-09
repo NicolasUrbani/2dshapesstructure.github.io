@@ -22,14 +22,26 @@ var popoverDisplayed;
 var ShapeDisplayed;
 var shapeName;
 var numPartold;
+var numPartClicked;
 
 var similarities;
 var intershape;
+var classement;
 
 var shapeIntername;
 var partIntername;
 
-var affinityMatrices;
+var seeOtherclicked;
+
+var affMatSymCont;
+var affMatSymNoCont;
+var affMatNoSymCont;
+var affMatNoSymNoCont;
+
+var dispMatSymCont;
+var dispMatSymNoCont;
+var dispMatNoSymCont;
+var dispMatNoSymNoCont;
 
 var nCol;
 var numCol = -1;
@@ -37,7 +49,7 @@ var numCol = -1;
 function doLoad() {
 	
 	hideElement('sidePanel');
-	
+	hideElement('slider');
 	// Show the popover to help users
 	$('#labelswrapper').popover('show');
 	
@@ -46,6 +58,10 @@ function doLoad() {
 	nbCanvas = 0;
 	nbSpectralCanvas = 0;
 	popoverDisplayed = false;
+	dispMatSymCont = false;
+	dispMatSymNoCont = false;
+	dispMatNoSymCont = false;
+	dispMatNoSymNoCont= false;
 
 	// Fetch the different classes of the dataset
 	var xhr_object=new XMLHttpRequest();
@@ -69,7 +85,7 @@ function doLoad() {
 					auxButton.setAttribute('type','button');
 					auxButton.addEventListener('click',handleClickCategory,'false');
 					auxButton.appendChild(auxTextNode);
-					if (k<23) {
+					if (k<22) {
 						container.appendChild(auxButton);
 					} else {
 						container2.appendChild(auxButton);
@@ -86,10 +102,16 @@ function doLoad() {
 	// Create canvas for affinity matrices vote
 	var matricesCanvasContainer = document.getElementById("matricescanvascontainer");
 	
-	
+	seeOtherclicked = false;
 	
 	var auxCanvas = document.createElement('canvas');
 	auxCanvas.setAttribute('id','colorbar');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/5);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','Symmetrical');
 	auxCanvas.setAttribute('width',canSize);
 	auxCanvas.setAttribute('height',canSize/5);
 	matricesCanvasContainer.appendChild(auxCanvas);
@@ -120,22 +142,71 @@ function doLoad() {
 	matricesCanvasContainer.appendChild(aux2Canvas);
 	var ctx2 = aux2Canvas.getContext("2d");
 	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','NonSymmetrical');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/5);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','ContextTitlenosym');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/10);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','contextmatrixCanvasnosym');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	var ctx = auxCanvas.getContext("2d");
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','NoContextTitlenosym');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/10);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	  
+	var aux2Canvas = document.createElement('canvas');
+	aux2Canvas.setAttribute('id','nocontextmatrixCanvasnosym');
+	aux2Canvas.setAttribute('width',canSize);
+	aux2Canvas.setAttribute('height',canSize);
+	matricesCanvasContainer.appendChild(aux2Canvas);
+	var ctx2 = aux2Canvas.getContext("2d");
+	
+	
 	var divlink = document.createElement("div");
 	matricesCanvasContainer.appendChild(divlink);
 	var linka = document.createElement('a');
 	linka.setAttribute('href', 'https://deepai.org/machine-learning-glossary-and-terms/affinity-matrix');
 	linka.innerHTML='more about Affinity Matrix';
 	divlink.appendChild(linka);
+
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/ranking.json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+			
+			classement = eval('('+xhr_object.responseText+')');
+			
+		}
+	}; 
+	xhr_object.send(null);
 } 
 
 function handleClickCategory(e) {
 
 	// Hiding the side panel in case it was displayed
 	hideElement('sidePanel');
+	hideElement('slider');
 	
 	// Hide the popover to help users
 	$('#labelswrapper').popover('hide');
 	
+	seeOtherclicked = false;
+	var slider = document.getElementById("percentageslider");
+	slider.oninput = function() {
+	}
 	
 	var aux; 
 	if (e.srcElement == null) {
@@ -178,6 +249,24 @@ function displayShapeCategory() {
 	if (document.getElementById("legcontcanva")!=null){document.getElementById("legcontcanva").remove();}
 	if (document.getElementById("legnocontcanva")!=null){document.getElementById("legnocontcanva").remove();}
 	if (document.getElementById("othershapelink")!=null){document.getElementById("othershapelink").remove();}
+
+	// Clear the remaining canvas
+	var canDeleted = 0;
+	for (var s = 0; s < nbCanvas ; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+		ctxToDraw.clearRect(0,0,canSize,canSize);
+
+		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
+		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
+		canToDraw.removeEventListener('click',handleShapeClick,false);
+		
+		canToDraw.style = "cursor: default;";
+		canToDraw.remove();
+		canDeleted++;
+		
+	}
+	nbCanvas = nbCanvas - canDeleted;
 
 	// Update the number of canvas
 	while (nbCanvas < shapenames.length) {
@@ -310,12 +399,22 @@ function handleShapeClick(e) {
 	}	
 	
 	var idCanvas = parseInt(auxId.split('canvas')[1]);
+	
+		
 
 	if (idCanvas < shapenames.length) {
-		var shapeToDisplay = shapenames[idCanvas];
-		displayPartsHighlighted(shapeToDisplay);
+
+		shapeName = shapenames[idCanvas];
+
+		var slider = document.getElementById("percentageslider");
+		slider.oninput = function() {
+			displayAffinityMatrices(shapeName);
+		}
+
+		displayPartsHighlighted(shapeName);
 		
 	}
+
 }
 
 function highlightColumn(e) {
@@ -340,11 +439,19 @@ function highlightColumn(e) {
 
 	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
 	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
+	var contextMatrixCanvasn = document.getElementById("contextmatrixCanvasnosym");
+	var nocontextMatrixCanvasn = document.getElementById("nocontextmatrixCanvasnosym");
+	
 	var mainCanvas = document.getElementById("maincanva");
 
 	var ctxToDrawContext = contextMatrixCanvas.getContext("2d");
 	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
+	var ctxToDrawContextn = contextMatrixCanvasn.getContext("2d");
+	var ctxToDrawNoContextn = nocontextMatrixCanvasn.getContext("2d");
+	
 	var ctxToDrawMain = mainCanvas.getContext("2d");
+	
+	
 
 	if (x>=canSize/20 && x<= 19*canSize/20 && y>=(canSize/20) && y<=(19*canSize/20)) {
 		x = x - canSize/20 ;
@@ -355,11 +462,16 @@ function highlightColumn(e) {
 
 			numCol = number;
 
-			drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_with_context"]);
-			drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_without_context"]);
+			drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont,dispMatSymCont);
+			drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont,dispMatSymNoCont);
+			drawAffinityMatrix(ctxToDrawContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymCont,dispMatNoSymCont);
+			drawAffinityMatrix(ctxToDrawNoContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymNoCont,dispMatNoSymNoCont);
+
 
 			drawHighlightedColumn(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
 			drawHighlightedColumn(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
+			drawHighlightedColumn(ctxToDrawContextn,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
+			drawHighlightedColumn(ctxToDrawNoContextn,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
 
 			ctxToDrawMain.clearRect(0,0,2*canSize,2*canSize);
 			drawObjectParts(ctxToDrawMain,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);	
@@ -374,13 +486,549 @@ function handleColumnClick(e) {
 	}
 }
 
+function computeAffinityMatrixSymCont(shape) {
+
+	var sim;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/PartsSimilarity/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			sim = aux["intrashape"];
+		}
+	}; 
+	xhr_object.send(null);
+
+	var nPart;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Parts/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			nPart = numPart(aux.parts);
+		}
+	}; 
+	xhr_object.send(null);
+
+	var slider = document.getElementById("percentageslider");
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+
+	// Creation of the affinity matrix
+	var nb_sim_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_sim_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_sim_mat[i][j] = 1;
+			} else {
+				nb_sim_mat[i][j] = 0;
+				nb_sim_mat[j][i] = 0;
+			}
+		}
+	}
+
+	// Creation of the matrix containing the number of occasions two parts could be judged similar
+	var nb_occ_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_occ_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_occ_mat[i][j] = 1;
+			} else {
+				nb_occ_mat[i][j] = 0;
+				nb_occ_mat[j][i] = 0;
+			}
+		}
+	}
+
+	var parts = Object.keys(sim);
+
+	// For each part of the shape that has been given to teams
+	for(var i=0; i<parts.length; i++) {
+		// (a given part A)
+		// we get the set of similar parts for each team	
+		var parts_sim_i_cont = sim[parts[i]].context;
+		var teams = Object.keys(parts_sim_i_cont);
+		var id_part_i = parseInt(parts[i],10)-2;
+		// and for each team that has judged this part
+		for(var t=0; t<teams.length; t++) {
+			var team = parseInt(teams[t],10);
+			// we check if this team performed well enough on the gold standard to be taken into account
+			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatSymCont = true;
+				// if that's the case, we get the parts they judged similar to the first one
+				var sim_i = parts_sim_i_cont[teams[t]];
+				// if there is only one part similar
+				if (!Array.isArray(sim_i)) {
+					// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+					nb_sim_mat[id_part_i][sim_i-2]+=1;
+					nb_sim_mat[sim_i-2][id_part_i]+=1;
+				// else if there is more than one part
+				} else {
+					// for each part 
+					for(var j=0; j<sim_i.length; j++) {
+						// (a given part B)
+						// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						var id_part_j = sim_i[j]-2;
+						nb_sim_mat[id_part_i][id_part_j]++;
+						nb_sim_mat[id_part_j][id_part_i]++;
+						// and to compute the implicit similarities, we look at all the other part of the shape
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){
+								// and if one part is also judged similar to the first part, it is similar to the second one too
+								// (if B and C are similar to A, they are implicitly judged similar)
+								if (sim_i.includes(p+2)) {
+									nb_sim_mat[id_part_j][p]++;
+									nb_occ_mat[id_part_j][p]++;
+								// (if C is not similar to A, B and C are implicitly not judged similar and we increment the numbers of occasions B and C are judged similar)
+								} else {
+									nb_occ_mat[p][id_part_j]++;									
+									nb_occ_mat[id_part_j][p]++;
+								}
+							}
+						}
+					}
+				}
+				// for each part B, we increment the numbers of occasins A and B are judged similar
+				for(var j=0; j<nPart-1; j++) {
+					if(id_part_i != j) {
+						nb_occ_mat[id_part_i][j]++;
+						nb_occ_mat[j][id_part_i]++;
+					}
+				}
+			} else { dispMatSymCont = false; }				
+		}
+	}
+
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=0; j<nPart-1; j++) {
+			if (nb_occ_mat[i][j] != 0) {
+				nb_sim_mat[i][j] /= nb_occ_mat[i][j];
+			}
+		}
+	}
+
+	affMatSymCont = nb_sim_mat;
+
+}
+
+function computeAffinityMatrixSymNoCont(shape) {
+
+	var sim;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/PartsSimilarity/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			sim = aux["intrashape"];
+		}
+	}; 
+	xhr_object.send(null);
+
+	var nPart;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Parts/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			nPart = numPart(aux.parts);
+		}
+	}; 
+	xhr_object.send(null);
+
+	var slider = document.getElementById("percentageslider");
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+
+	// Creation of the affinity matrix
+	var nb_sim_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_sim_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_sim_mat[i][j] = 1;
+			} else {
+				nb_sim_mat[i][j] = 0;
+				nb_sim_mat[j][i] = 0;
+			}
+		}
+	}
+
+	// Creation of the matrix containing the number of occasions two parts could be judged similar
+	var nb_occ_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_occ_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_occ_mat[i][j] = 1;
+			} else {
+				nb_occ_mat[i][j] = 0;
+				nb_occ_mat[j][i] = 0;
+			}
+		}
+	}
+
+	var parts = Object.keys(sim);
+
+	// For each part of the shape that has been given to teams
+	for(var i=0; i<parts.length; i++) {
+		// (a given part A)
+		// we get the set of similar parts for each team	
+		var parts_sim_i_nocont = sim[parts[i]].nocontext;
+		var teams = Object.keys(parts_sim_i_nocont);
+		var id_part_i = parseInt(parts[i],10)-2;
+		// and for each team that has judged this part
+		for(var t=0; t<teams.length; t++) {
+			var team = parseInt(teams[t],10);
+			// we check if this team performed well enough on the gold standard to be taken into account
+			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatSymNoCont = true;
+				// if that's the case, we get the parts they judged similar to the first one
+				var sim_i = parts_sim_i_nocont[teams[t]];
+				// if there is only one part similar
+				if (!Array.isArray(sim_i)) {
+					// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+					nb_sim_mat[id_part_i][sim_i-2]+=1;
+					nb_sim_mat[sim_i-2][id_part_i]+=1;
+				// else if there is more than one part
+				} else {
+					// for each part 
+					for(var j=0; j<sim_i.length; j++) {
+						// (a given part B)
+						// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						var id_part_j = sim_i[j]-2;
+						nb_sim_mat[id_part_i][id_part_j]++;
+						nb_sim_mat[id_part_j][id_part_i]++;
+						// and to compute the implicit similarities, we look at all the other part of the shape
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){
+								// and if one part is also judged similar to the first part, it is similar to the second one too
+								// (if B and C are similar to A, they are implicitly judged similar)
+								if (sim_i.includes(p+2)) {
+									nb_sim_mat[id_part_j][p]++;
+									nb_occ_mat[id_part_j][p]++;
+								// (if C is not similar to A, B and C are implicitly not judged similar and we increment the numbers of occasions B and C are judged similar)
+								} else {
+									nb_occ_mat[p][id_part_j]++;									
+									nb_occ_mat[id_part_j][p]++;
+								}
+							}
+						}
+					}
+				}
+				// for each part B, we increment the numbers of occasins A and B are judged similar
+				for(var j=0; j<nPart-1; j++) {
+					if(id_part_i != j) {
+						nb_occ_mat[id_part_i][j]++;
+						nb_occ_mat[j][id_part_i]++;
+					}
+				}
+			} else { dispMatSymNoCont = false; }
+		}
+	}
+
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=0; j<nPart-1; j++) {
+			if (nb_occ_mat[i][j] != 0) {
+				nb_sim_mat[i][j] /= nb_occ_mat[i][j];
+			}
+		}
+	}
+
+	affMatSymNoCont = nb_sim_mat;
+
+}
+
+function computeAffinityMatrixNoSymCont(shape) {
+
+	var sim;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/PartsSimilarity/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			sim = aux["intrashape"];
+		}
+	}; 
+	xhr_object.send(null);
+
+	var nPart;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Parts/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			nPart = numPart(aux.parts);
+		}
+	}; 
+	xhr_object.send(null);
+
+	var slider = document.getElementById("percentageslider");
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+
+	// Creation of the affinity matrix
+	var nb_sim_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_sim_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_sim_mat[i][j] = 1;
+			} else {
+				nb_sim_mat[i][j] = 0;
+				nb_sim_mat[j][i] = 0;
+			}
+		}
+	}
+
+	// Creation of the matrix containing the number of occasions two parts could be judged similar
+	var nb_occ_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_occ_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_occ_mat[i][j] = 1;
+			} else {
+				nb_occ_mat[i][j] = 0;
+				nb_occ_mat[j][i] = 0;
+			}
+		}
+	}
+
+	var parts = Object.keys(sim);
+
+	// For each part of the shape that has been given to teams
+	for(var i=0; i<parts.length; i++) {
+		// (a given part A)
+		// we get the set of similar parts for each team	
+		var parts_sim_i_cont = sim[parts[i]].context;
+		var teams = Object.keys(parts_sim_i_cont);
+		var id_part_i = parseInt(parts[i],10)-2;
+		// and for each team that has judged this part
+		for(var t=0; t<teams.length; t++) {
+			var team = parseInt(teams[t],10);
+			// we check if this team performed well enough on the gold standard to be taken into account
+			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatNoSymCont = true;
+				// if that's the case, we get the parts they judged similar to the first one
+				var sim_i = parts_sim_i_cont[teams[t]];
+				// if there is only one part similar
+				if (!Array.isArray(sim_i)) {
+					// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+					nb_sim_mat[id_part_i][sim_i-2]+=1;
+				// else if there is more than one part
+				} else {
+					// for each part 
+					for(var j=0; j<sim_i.length; j++) {
+						// (a given part B)
+						// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						var id_part_j = sim_i[j]-2;
+						nb_sim_mat[id_part_i][id_part_j]++;
+						// and to compute the implicit similarities, we look at all the other part of the shape
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){
+								// and if one part is also judged similar to the first part, it is similar to the second one too
+								// (if B and C are similar to A, they are implicitly judged similar)
+								if (sim_i.includes(p+2)) {
+									nb_sim_mat[id_part_j][p]++;
+									nb_occ_mat[id_part_j][p]++;
+								// (if C is not similar to A, B and C are implicitly not judged similar and we increment the numbers of occasions B and C are judged similar)
+								} else {
+									nb_occ_mat[p][id_part_j]++;									
+									nb_occ_mat[id_part_j][p]++;
+								}
+							}
+						}
+					}
+				}
+				// for each part B, we increment the numbers of occasins A and B are judged similar
+				for(var j=0; j<nPart-1; j++) {
+					if(id_part_i != j) {
+						nb_occ_mat[id_part_i][j]++;
+					}
+				}
+			} else { dispMatNoSymCont = false;}
+		}
+	}
+
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=0; j<nPart-1; j++) {
+			if (nb_occ_mat[i][j] != 0) {
+				nb_sim_mat[i][j] /= nb_occ_mat[i][j];
+			}
+		}
+	}
+
+	affMatNoSymCont = nb_sim_mat;
+
+}
+
+function computeAffinityMatrixNoSymNoCont(shape) {
+
+	var sim;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/PartsSimilarity/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			sim = aux["intrashape"];
+		}
+	}; 
+	xhr_object.send(null);
+
+	var nPart;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Parts/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			nPart = numPart(aux.parts);
+		}
+	}; 
+	xhr_object.send(null);
+
+	var slider = document.getElementById("percentageslider");
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+
+	// Creation of the affinity matrix
+	var nb_sim_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_sim_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_sim_mat[i][j] = 1;
+			} else {
+				nb_sim_mat[i][j] = 0;
+				nb_sim_mat[j][i] = 0;
+			}
+		}
+	}
+
+	// Creation of the matrix containing the number of occasions two parts could be judged similar
+	var nb_occ_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_occ_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_occ_mat[i][j] = 1;
+			} else {
+				nb_occ_mat[i][j] = 0;
+				nb_occ_mat[j][i] = 0;
+			}
+		}
+	}
+
+	var parts = Object.keys(sim);
+
+	// For each part of the shape that has been given to teams
+	for(var i=0; i<parts.length; i++) {
+		// (a given part A)
+		// we get the set of similar parts for each team	
+		var parts_sim_i_nocont = sim[parts[i]].nocontext;
+		var teams = Object.keys(parts_sim_i_nocont);
+		var id_part_i = parseInt(parts[i],10)-2;
+		// and for each team that has judged this part
+		for(var t=0; t<teams.length; t++) {
+			var team = parseInt(teams[t],10);
+			// we check if this team performed well enough on the gold standard to be taken into account
+			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatNoSymNoCont = true;
+				// if that's the case, we get the parts they judged similar to the first one
+				var sim_i = parts_sim_i_nocont[teams[t]];
+				// if there is only one part similar
+				if (!Array.isArray(sim_i)) {
+					// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+					nb_sim_mat[id_part_i][sim_i-2]+=1;
+				// else if there is more than one part
+				} else {
+					// for each part 
+					for(var j=0; j<sim_i.length; j++) {
+						// (a given part B)
+						// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						var id_part_j = sim_i[j]-2;
+						nb_sim_mat[id_part_i][id_part_j]++;
+						// and to compute the implicit similarities, we look at all the other part of the shape
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){
+								// and if one part is also judged similar to the first part, it is similar to the second one too
+								// (if B and C are similar to A, they are implicitly judged similar)
+								if (sim_i.includes(p+2)) {
+									nb_sim_mat[id_part_j][p]++;
+									nb_occ_mat[id_part_j][p]++;
+								// (if C is not similar to A, B and C are implicitly not judged similar and we increment the numbers of occasions B and C are judged similar)
+								} else {
+									nb_occ_mat[p][id_part_j]++;									
+									nb_occ_mat[id_part_j][p]++;
+								}
+							}
+						}
+					}
+				}
+				// for each part B, we increment the numbers of occasins A and B are judged similar
+				for(var j=0; j<nPart-1; j++) {
+					if(id_part_i != j) {
+						nb_occ_mat[id_part_i][j]++;
+					}
+				}
+			} else { dispMatNoSymNoCont = false;}
+		}
+	}
+
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=0; j<nPart-1; j++) {
+			if (nb_occ_mat[i][j] != 0) {
+				nb_sim_mat[i][j] /= nb_occ_mat[i][j];
+			}
+		}
+	}
+
+	affMatNoSymNoCont = nb_sim_mat;
+
+}
+
 function displayAffinityMatrices(shape) {
 
 	displayElement('sidePanel');
+	displayElement('slider');
 
 	// Fetch the matrices of this shape
+	var shapeName = shape.slice(0, shape.lastIndexOf("_"));
 	var xhr_object=new XMLHttpRequest();
-	xhr_object.open("GET","JSON/AffinityMatrices/"+shape+".json",false);
+	xhr_object.open("GET","JSON/AffinityMatrices/"+shapeName+".json",false);
 	xhr_object.onreadystatechange  = function() { 
 	    if(xhr_object.readyState  == 4) {
 			
@@ -393,6 +1041,20 @@ function displayAffinityMatrices(shape) {
 	var ctxColorbar = document.getElementById("colorbar").getContext("2d");
 	drawColorbar(ctxColorbar);
 
+
+	// Symmetrical and no symmetrical title before affinity matrices
+	var ctxContext = document.getElementById("Symmetrical").getContext("2d");
+	var ctxnocontext = document.getElementById("NonSymmetrical").getContext("2d");
+	
+	
+	ctxContext.fillStyle = "black";
+	ctxContext.font = "18pt Calibri,Geneva,Arial";
+	ctxContext.fillText('Symmetrical',canSize/5,canSize/10);
+
+	
+	ctxnocontext.fillStyle = "black";
+	ctxnocontext.font = "18pt Calibri,Geneva,Arial";
+	ctxnocontext.fillText("Non symmetrical",canSize/10,canSize/10);
 
 	// Context and no context title before affinity matrices
 	var ctxContext = document.getElementById("ContextTitle").getContext("2d");
@@ -408,6 +1070,20 @@ function displayAffinityMatrices(shape) {
 	ctxnocontext.font = "18pt Calibri,Geneva,Arial";
 	ctxnocontext.fillText("No context",canSize/4,canSize/10);
 	
+	// Context and no context title before affinity matrices
+	var ctxContextn = document.getElementById("ContextTitlenosym").getContext("2d");
+	var ctxnocontextn = document.getElementById("NoContextTitlenosym").getContext("2d");
+	
+	
+	ctxContextn.fillStyle = "black";
+	ctxContextn.font = "18pt Calibri,Geneva,Arial";
+	ctxContextn.fillText('Context',canSize/4,canSize/10);
+
+	
+	ctxnocontextn.fillStyle = "black";
+	ctxnocontextn.font = "18pt Calibri,Geneva,Arial";
+	ctxnocontextn.fillText("No context",canSize/4,canSize/10);
+	
 	// Affinity matrices
 	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
 	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
@@ -416,20 +1092,64 @@ function displayAffinityMatrices(shape) {
 	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
 
 	nCol = matrices["matrix_with_context"].length;
-	affinityMatrices = matrices;	
-	
-	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_with_context"]);
-	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_without_context"]);
 
-	contextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
-	nocontextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
+	computeAffinityMatrixSymCont(shape);
+	computeAffinityMatrixSymNoCont(shape);
 	
-	contextMatrixCanvas.addEventListener('click',handleColumnClick,false);
-	nocontextMatrixCanvas.addEventListener('click',handleColumnClick,false);
+	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont,dispMatSymCont);
+	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont,dispMatSymNoCont);
 
+	if (dispMatSymCont){
+		contextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);	
+		contextMatrixCanvas.addEventListener('click',handleColumnClick,false);
+	} else {
+		contextMatrixCanvas.removeEventListener('mousemove',highlightColumn,false);
+		contextMatrixCanvas.removeEventListener('click',handleColumnClick,false);
+	}
+	
+	if (dispMatSymNoCont) {
+		nocontextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvas.addEventListener('click',handleColumnClick,false);
+	} else {
+		nocontextMatrixCanvas.removeEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvas.removeEventListener('click',handleColumnClick,false);	
+	}
+	
+	// Affinity matrices
+	var contextMatrixCanvasn = document.getElementById("contextmatrixCanvasnosym");
+	var nocontextMatrixCanvasn = document.getElementById("nocontextmatrixCanvasnosym");
+
+	var ctxToDrawContextn = contextMatrixCanvasn.getContext("2d");
+	var ctxToDrawNoContextn = nocontextMatrixCanvasn.getContext("2d");
+
+	nCol = matrices["matrix_with_context"].length;
+
+	computeAffinityMatrixNoSymCont(shape);
+	computeAffinityMatrixNoSymNoCont(shape);
+	
+	drawAffinityMatrix(ctxToDrawContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymCont,dispMatNoSymCont);
+	drawAffinityMatrix(ctxToDrawNoContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymNoCont,dispMatNoSymNoCont);
+	
+	if(dispMatNoSymCont){
+		contextMatrixCanvasn.addEventListener('mousemove',highlightColumn,false);
+		
+		contextMatrixCanvasn.addEventListener('click',handleColumnClick,false);
+	} else {
+		contextMatrixCanvasn.removeEventListener('mousemove',highlightColumn,false);
+		contextMatrixCanvasn.removeEventListener('click',handleColumnClick,false);
+	}
+	
+	if (dispMatNoSymNoCont) {
+		nocontextMatrixCanvasn.addEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvasn.addEventListener('click',handleColumnClick,false);
+	} else {
+		nocontextMatrixCanvasn.removeEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvasn.removeEventListener('click',handleColumnClick,false);
+	}
 }
 
 function displayShapeSimilarities(shape, part) {
+	displayElement('slider');
 	
 	if (!popoverDisplayed) {
 		// Hide the popover that tells users to click on a shape
@@ -475,20 +1195,59 @@ function displayShapeSimilarities(shape, part) {
 		}
 	}; 
 	xhr_object.send(null);
+
+	drawSelectedSimilarities(shape, part);
+
+	var slider = document.getElementById("percentageslider");
+	slider.oninput = function() {
+		//drawSelectedSimilarities(shapeName, numPartold);
+		displayShapeSimilarities(shapeName, numPartClicked);
+		displayAffinityMatrices(shapeName);
+	}
+
+}
+
+function drawSelectedSimilarities(shape, part) {
+	var slider = document.getElementById("percentageslider");
+	//console.log(similarities);
+	var contextKeys = Object.keys(similarities.context);
+	var nocontextKeys = Object.keys(similarities.nocontext);
+
+	var selectedContextKeys = [];
+	var selectedNoContextKeys = [];
+
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
 	
+	for (var k = 0; k<contextKeys.length; k++) {
+		var teamId = contextKeys[k];
+		if (classement["ranking_with"][parseInt(teamId,10)] <= classementLimite) {
+			selectedContextKeys.push(teamId);
+		}
+	}
+
+	for (var k = 0; k<nocontextKeys.length; k++) {
+		var teamId = nocontextKeys[k];
+		if (classement["ranking_without"][parseInt(teamId,10)] <= classementLimite) {
+			selectedNoContextKeys.push(teamId);
+		}
+	}
 
 	var canvasContainer = document.getElementById("canvascontainer");
-	var nbContext = Object.keys(similarities.context).length;
-	var nbNocontext = Object.keys(similarities.nocontext).length;
+	var nbContext = Object.keys(selectedContextKeys).length;
+	var nbNocontext = Object.keys(selectedNoContextKeys).length;
 	
-	
+	//console.log("NbCanvas :" + nbCanvas);
+	if (document.getElementById("legcontcanva")!=null){document.getElementById("legcontcanva").remove();}
 	if (document.getElementById("legnocontcanva")!=null){document.getElementById("legnocontcanva").remove();}
+	var canDeleted =0;
 	for (var i=0; i<nbCanvas;i++){
 			document.getElementById('canvas'+i).remove();
+			//console.log(i);
+			canDeleted++;
 	
 	}
-	nbCanvas = 0;
-	
+	nbCanvas = nbCanvas - canDeleted;
+	//console.log(nbNocontext);
 	//Légend avec context
 	if (document.getElementById("legcontcanva")==null &&nbContext>0){
 		var legendContext = document.createElement('canvas');
@@ -511,7 +1270,7 @@ function displayShapeSimilarities(shape, part) {
 		ctxl.fillText("selected part",7*canSize/20,1.5*canSize/20);
 		ctxl.fillText("parts judged similar with context",26*canSize/20,1.5*canSize/20);
 	}
-
+	
 	// Update the number of canvas
 	while (nbCanvas < nbContext + nbNocontext) {
 		// Create new canvases to meet the requirements
@@ -526,8 +1285,9 @@ function displayShapeSimilarities(shape, part) {
 		ctx.translate(0, canSize);
 	   // flip context vertically
 		ctx.scale(1, -1);
-		if (nbNocontext!=0 && nbCanvas == nbContext){
-		 
+		//console.log(nbNocontext + "khohln" + nbCanvas + " "+ nbContext);
+		if (nbNocontext>0 && nbCanvas == nbContext){
+			//console.log("jajaoifnoghb");
 			var legend2Context = document.createElement('canvas');
 			legend2Context.setAttribute('id','legnocontcanva');
 			legend2Context.setAttribute('width',canvasContainer.clientWidth);
@@ -539,7 +1299,19 @@ function displayShapeSimilarities(shape, part) {
 
 	//see similar part from other shapes
 	var interKeys = Object.keys(intershape.nocontext);
-	var nbInter = interKeys.length;
+	var interKeysSelected = [];
+	var slider = document.getElementById("percentageslider");
+
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+	
+	for (var k = 0; k<interKeys.length; k++) {
+		var teamId = interKeys[k];
+		if (classement["ranking_without"][parseInt(teamId,10)] <= classementLimite) {
+			interKeysSelected.push(teamId);
+		}
+	}
+	var nbInter = interKeysSelected.length;
+	if (document.getElementById("othershapelink")!=null){document.getElementById("othershapelink").remove();}
 	if (document.getElementById("othershapelink")==null && nbInter>0){
 		shapeIntername=shape;
 		partIntername=part;
@@ -555,9 +1327,6 @@ function displayShapeSimilarities(shape, part) {
 		otherlink.addEventListener('click',handleOtherShapeClick,false);
 	
 	}
-
-	var contextKeys = Object.keys(similarities.context);
-	var nocontextKeys = Object.keys(similarities.nocontext);
 	
 	// Draw the shapes on each canvas
 	for (var s = 0; s < nbContext + nbNocontext; s++) {
@@ -567,10 +1336,10 @@ function displayShapeSimilarities(shape, part) {
 		
 		if (s < nbContext) {
 
-			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.context[contextKeys[s]],true);
+			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.context[selectedContextKeys[s]],true);
 
 		} else {
-			if (s==nbContext){
+			if (s==nbContext && nbNocontext>0){
 				var legend2Context = document.getElementById("legnocontcanva");
 				var ctxl = legend2Context.getContext('2d');
 				ctxl.fillStyle = "red";
@@ -586,16 +1355,20 @@ function displayShapeSimilarities(shape, part) {
 				ctxl.fillText("parts judged similar without context",26*canSize/20,1.5*canSize/20);
 		
 			}
-			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.nocontext[nocontextKeys[s-nbContext]],false);
+			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.nocontext[selectedNoContextKeys[s-nbContext]],false);
 
 		}
 
 	}
-
+	
+	if (seeOtherclicked==true && otherlink!=undefined){
+		otherlink.click();
+	}
 	
 
 	// Clear the remaining canvas
-	for (var s = nbContext + nbNocontext; s < nbCanvas ; s++) {
+	var canDeleted = 0;
+	for (var s = nbContext + nbNocontext + nbInter; s < nbCanvas ; s++) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
 		ctxToDraw.clearRect(0,0,canSize,canSize);
@@ -605,8 +1378,11 @@ function displayShapeSimilarities(shape, part) {
 		canToDraw.removeEventListener('click',handleShapeClick,false);
 		
 		canToDraw.style = "cursor: default;";
+		canToDraw.remove();
+		canDeleted++;
 		
 	}
+	nbCanvas = nbCanvas - canDeleted;
 
 	// Remove event listeners on all canvases
 	for (var s = 0; s < nbCanvas ; s++) {
@@ -854,8 +1630,8 @@ function highlightParts(e) {
 			if (numPart != 1) {
 				var size = 9*canSize/10/nCol;
 
-				drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_with_context"]);
-				drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affinityMatrices["matrix_without_context"]);
+				drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont,dispMatSymCont);
+				drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont,dispMatSymNoCont);
 
 				drawHighlightedColumn(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,size,numPart-2);
 				drawHighlightedColumn(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,size,numPart-2);
@@ -876,12 +1652,14 @@ function highlightParts(e) {
 
 function handlePartClick(e) {
 	if (numPartold != 1) {
-		displayShapeSimilarities(shapeName,numPartold);
+		numPartClicked = numPartold
+		displayShapeSimilarities(shapeName,numPartClicked);
 	}
 }
 
 function handleOtherShapeClick(e) {
 		
+	seeOtherclicked = true;
 	var xhr_object=new XMLHttpRequest();
 	xhr_object.open("GET","JSON/PartsSimilarity/"+shapeIntername+".json",false);
 	xhr_object.onreadystatechange  = function() { 
@@ -894,11 +1672,70 @@ function handleOtherShapeClick(e) {
 	    }
 	}; 
 	xhr_object.send(null);
+
+
 	var interKeys = Object.keys(intershape.nocontext);
-	var nbInter = interKeys.length;
+	var interKeysSelected = [];
+	var slider = document.getElementById("percentageslider");
+
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+	
+	for (var k = 0; k<interKeys.length; k++) {
+		var teamId = interKeys[k];
+		if (classement["ranking_without"][parseInt(teamId,10)] <= classementLimite) {
+			interKeysSelected.push(teamId);
+		}
+	}
+	
+	var contextKeys = Object.keys(similarities.context);
+	var nocontextKeys = Object.keys(similarities.nocontext);
+
+	var selectedContextKeys = [];
+	var selectedNoContextKeys = [];
+
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+	
+	for (var k = 0; k<contextKeys.length; k++) {
+		var teamId = contextKeys[k];
+		if (classement["ranking_with"][parseInt(teamId,10)] <= classementLimite) {
+			selectedContextKeys.push(teamId);
+		}
+	}
+
+	for (var k = 0; k<nocontextKeys.length; k++) {
+		var teamId = nocontextKeys[k];
+		if (classement["ranking_without"][parseInt(teamId,10)] <= classementLimite) {
+			selectedNoContextKeys.push(teamId);
+		}
+	}
+
 	var canvasContainer = document.getElementById("canvascontainer");
-	var nbContext = Object.keys(similarities.context).length;
-	var nbNocontext = Object.keys(similarities.nocontext).length;
+	var nbContext = Object.keys(selectedContextKeys).length;
+	var nbNocontext = Object.keys(selectedNoContextKeys).length;
+	var nbInter = interKeysSelected.length;
+	var canvasContainer = document.getElementById("canvascontainer");
+	
+	// Clear the remaining canvas
+	var canDeleted = 0;
+	s = nbContext + nbNocontext;
+	//console.log("nbCanva "+nbCanvas + "nbCo"+nbContext+"nbno"+nbNocontext);
+	while (s < nbCanvas) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+		ctxToDraw.clearRect(0,0,canSize,canSize);
+
+		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
+		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
+		canToDraw.removeEventListener('click',handleShapeClick,false);
+		
+		canToDraw.style = "cursor: default;";
+		canToDraw.remove();
+		canDeleted++;
+		s++;
+		
+	}
+	nbCanvas = nbCanvas - canDeleted;
+
 	while (nbCanvas < nbContext + nbNocontext + nbInter) {
 		// Create new canvases to meet the requirements
 		var auxCanvas = document.createElement('canvas');
@@ -919,7 +1756,7 @@ function handleOtherShapeClick(e) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
 
-		var interSimilar = intershape.nocontext[interKeys[s-(nbContext + nbNocontext)]];
+		var interSimilar = intershape.nocontext[interKeysSelected[s-(nbContext + nbNocontext)]];
 
 		var nameFile = interSimilar[0].slice(0, interSimilar[0].lastIndexOf("_"));
 		var extShapeInfo;
@@ -955,22 +1792,12 @@ function handleOtherShapeClick(e) {
 		ctxToDraw.fillStyle = "black";
 		ctxToDraw.font = "18pt Calibri,Geneva,Arial";
 		ctxToDraw.fillText(nameFile,0,0);
+		//console.log("création other");
+		
 		
 	}
+		
 	
-	// Clear the remaining canvas
-	for (var s = nbContext + nbNocontext + nbInter; s < nbCanvas ; s++) {
-		var canToDraw = document.getElementById("canvas" + s);
-		var ctxToDraw = canToDraw.getContext('2d');
-		ctxToDraw.clearRect(0,0,canSize,canSize);
-
-		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
-		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
-		canToDraw.removeEventListener('click',handleShapeClick,false);
-		
-		canToDraw.style = "cursor: default;";
-		
-	}
 }
 
 function displayPartsHighlighted(partsToDisplay) {
@@ -1072,6 +1899,6 @@ function displayPartsHighlighted(partsToDisplay) {
 	ctxl.fillText("secondary parts",7*canSize/20,6*canSize/20);
 	ctxl.fillText("details",7*canSize/20,9.5*canSize/20);
 
-	displayAffinityMatrices(shapeToDisplay);
+	displayAffinityMatrices(shapeName);
 
 }
