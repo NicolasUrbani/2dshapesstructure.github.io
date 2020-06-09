@@ -38,6 +38,11 @@ var affMatSymNoCont;
 var affMatNoSymCont;
 var affMatNoSymNoCont;
 
+var dispMatSymCont;
+var dispMatSymNoCont;
+var dispMatNoSymCont;
+var dispMatNoSymNoCont;
+
 var nCol;
 var numCol = -1;
 
@@ -53,6 +58,10 @@ function doLoad() {
 	nbCanvas = 0;
 	nbSpectralCanvas = 0;
 	popoverDisplayed = false;
+	dispMatSymCont = false;
+	dispMatSymNoCont = false;
+	dispMatNoSymCont = false;
+	dispMatNoSymNoCont= false;
 
 	// Fetch the different classes of the dataset
 	var xhr_object=new XMLHttpRequest();
@@ -453,10 +462,10 @@ function highlightColumn(e) {
 
 			numCol = number;
 
-			drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont);
-			drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont);
-			drawAffinityMatrix(ctxToDrawContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymCont);
-			drawAffinityMatrix(ctxToDrawNoContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymNoCont);
+			drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont,dispMatSymCont);
+			drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont,dispMatSymNoCont);
+			drawAffinityMatrix(ctxToDrawContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymCont,dispMatNoSymCont);
+			drawAffinityMatrix(ctxToDrawNoContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymNoCont,dispMatNoSymNoCont);
 
 
 			drawHighlightedColumn(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
@@ -554,6 +563,7 @@ function computeAffinityMatrixSymCont(shape) {
 			var team = parseInt(teams[t],10);
 			// we check if this team performed well enough on the gold standard to be taken into account
 			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatSymCont = true;
 				// if that's the case, we get the parts they judged similar to the first one
 				var sim_i = parts_sim_i_cont[teams[t]];
 				// if there is only one part similar
@@ -595,7 +605,7 @@ function computeAffinityMatrixSymCont(shape) {
 						nb_occ_mat[j][id_part_i]++;
 					}
 				}
-			} 
+			} else { dispMatSymCont = false; }				
 		}
 	}
 
@@ -688,6 +698,7 @@ function computeAffinityMatrixSymNoCont(shape) {
 			var team = parseInt(teams[t],10);
 			// we check if this team performed well enough on the gold standard to be taken into account
 			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatSymNoCont = true;
 				// if that's the case, we get the parts they judged similar to the first one
 				var sim_i = parts_sim_i_nocont[teams[t]];
 				// if there is only one part similar
@@ -729,7 +740,7 @@ function computeAffinityMatrixSymNoCont(shape) {
 						nb_occ_mat[j][id_part_i]++;
 					}
 				}
-			}
+			} else { dispMatSymNoCont = false; }
 		}
 	}
 
@@ -822,6 +833,7 @@ function computeAffinityMatrixNoSymCont(shape) {
 			var team = parseInt(teams[t],10);
 			// we check if this team performed well enough on the gold standard to be taken into account
 			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatNoSymCont = true;
 				// if that's the case, we get the parts they judged similar to the first one
 				var sim_i = parts_sim_i_cont[teams[t]];
 				// if there is only one part similar
@@ -860,7 +872,7 @@ function computeAffinityMatrixNoSymCont(shape) {
 						nb_occ_mat[id_part_i][j]++;
 					}
 				}
-			}
+			} else { dispMatNoSymCont = false;}
 		}
 	}
 
@@ -953,6 +965,7 @@ function computeAffinityMatrixNoSymNoCont(shape) {
 			var team = parseInt(teams[t],10);
 			// we check if this team performed well enough on the gold standard to be taken into account
 			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatNoSymNoCont = true;
 				// if that's the case, we get the parts they judged similar to the first one
 				var sim_i = parts_sim_i_nocont[teams[t]];
 				// if there is only one part similar
@@ -991,7 +1004,7 @@ function computeAffinityMatrixNoSymNoCont(shape) {
 						nb_occ_mat[id_part_i][j]++;
 					}
 				}
-			}
+			} else { dispMatNoSymNoCont = false;}
 		}
 	}
 
@@ -1083,14 +1096,24 @@ function displayAffinityMatrices(shape) {
 	computeAffinityMatrixSymCont(shape);
 	computeAffinityMatrixSymNoCont(shape);
 	
-	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont);
-	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont);
+	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont,dispMatSymCont);
+	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont,dispMatSymNoCont);
 
-	contextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
-	nocontextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
+	if (dispMatSymCont){
+		contextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);	
+		contextMatrixCanvas.addEventListener('click',handleColumnClick,false);
+	} else {
+		contextMatrixCanvas.removeEventListener('mousemove',highlightColumn,false);
+		contextMatrixCanvas.removeEventListener('click',handleColumnClick,false);
+	}
 	
-	contextMatrixCanvas.addEventListener('click',handleColumnClick,false);
-	nocontextMatrixCanvas.addEventListener('click',handleColumnClick,false);
+	if (dispMatSymNoCont) {
+		nocontextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvas.addEventListener('click',handleColumnClick,false);
+	} else {
+		nocontextMatrixCanvas.removeEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvas.removeEventListener('click',handleColumnClick,false);	
+	}
 	
 	// Affinity matrices
 	var contextMatrixCanvasn = document.getElementById("contextmatrixCanvasnosym");
@@ -1104,15 +1127,25 @@ function displayAffinityMatrices(shape) {
 	computeAffinityMatrixNoSymCont(shape);
 	computeAffinityMatrixNoSymNoCont(shape);
 	
-	drawAffinityMatrix(ctxToDrawContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymCont);
-	drawAffinityMatrix(ctxToDrawNoContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymNoCont);
-
-	contextMatrixCanvasn.addEventListener('mousemove',highlightColumn,false);
-	nocontextMatrixCanvasn.addEventListener('mousemove',highlightColumn,false);
+	drawAffinityMatrix(ctxToDrawContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymCont,dispMatNoSymCont);
+	drawAffinityMatrix(ctxToDrawNoContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymNoCont,dispMatNoSymNoCont);
 	
-	contextMatrixCanvasn.addEventListener('click',handleColumnClick,false);
-	nocontextMatrixCanvasn.addEventListener('click',handleColumnClick,false);
-
+	if(dispMatNoSymCont){
+		contextMatrixCanvasn.addEventListener('mousemove',highlightColumn,false);
+		
+		contextMatrixCanvasn.addEventListener('click',handleColumnClick,false);
+	} else {
+		contextMatrixCanvasn.removeEventListener('mousemove',highlightColumn,false);
+		contextMatrixCanvasn.removeEventListener('click',handleColumnClick,false);
+	}
+	
+	if (dispMatNoSymNoCont) {
+		nocontextMatrixCanvasn.addEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvasn.addEventListener('click',handleColumnClick,false);
+	} else {
+		nocontextMatrixCanvasn.removeEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvasn.removeEventListener('click',handleColumnClick,false);
+	}
 }
 
 function displayShapeSimilarities(shape, part) {
@@ -1597,8 +1630,8 @@ function highlightParts(e) {
 			if (numPart != 1) {
 				var size = 9*canSize/10/nCol;
 
-				drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont);
-				drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont);
+				drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont,dispMatSymCont);
+				drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont,dispMatSymNoCont);
 
 				drawHighlightedColumn(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,size,numPart-2);
 				drawHighlightedColumn(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,size,numPart-2);

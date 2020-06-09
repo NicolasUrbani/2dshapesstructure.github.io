@@ -262,47 +262,54 @@ function drawColorbar(ctxColorbar) {
 	ctxColorbar.fillText('High',8.25*canSize/10,5*canSize/40);
 }
 
-function drawAffinityMatrix(ctxToDraw,scale,width,offX,offY,matrix) {	
+function drawAffinityMatrix(ctxToDraw,scale,width,offX,offY,matrix,bool) {	
 
 	ctxToDraw.clearRect(0,0,canSize,canSize);
+	console.log(bool);
+	if (bool) {
 
-	var n = matrix.length;
-	var size = scale / n;
+		var n = matrix.length;
+		var size = scale / n;
 
-	for (var i=0; i<n; i++){
-		for (var j=0; j<n; j++){
-			
-			var x = matrix[i][j];
-			var red = 0, green = 0, blue = 0;
+		for (var i=0; i<n; i++){
+			for (var j=0; j<n; j++){
+				
+				var x = matrix[i][j];
+				var red = 0, green = 0, blue = 0;
 
-			if (x<=0.5) {
-				blue = 1-2*x;
-				green = 1-blue;
-			} else {
-				red = 2*x-1;
-				green = 1-red;
+				if (x<=0.5) {
+					blue = 1-2*x;
+					green = 1-blue;
+				} else {
+					red = 2*x-1;
+					green = 1-red;
+				}
+
+				red = Math.round(255 * red);
+				green = Math.round(255 * green);
+				blue = Math.round(255 * blue);
+
+				ctxToDraw.fillStyle = 'rgb(' + parseInt(red,10) + ',' + parseInt(green,10) + ',' + parseInt(blue,10) + ')';
+				ctxToDraw.strokeStyle = 'rgb(' + parseInt(red,10) + ',' + parseInt(green,10) + ',' + parseInt(blue,10) + ')';
+
+				ctxToDraw.fillRect(offX+j*size,offY+i*size,size,size);
 			}
-
-			red = Math.round(255 * red);
-			green = Math.round(255 * green);
-			blue = Math.round(255 * blue);
-
-			ctxToDraw.fillStyle = 'rgb(' + parseInt(red,10) + ',' + parseInt(green,10) + ',' + parseInt(blue,10) + ')';
-			ctxToDraw.strokeStyle = 'rgb(' + parseInt(red,10) + ',' + parseInt(green,10) + ',' + parseInt(blue,10) + ')';
-
-			ctxToDraw.fillRect(offX+j*size,offY+i*size,size,size);
 		}
-	}
-	
-	ctxToDraw.strokeStyle = 'black';
-	ctxToDraw.lineWidth = width;
+		
+		ctxToDraw.strokeStyle = 'black';
+		ctxToDraw.lineWidth = width;
 
-	ctxToDraw.beginPath();
-	ctxToDraw.moveTo(offX, offY);
-	ctxToDraw.lineTo(offX+scale, offY);
-	ctxToDraw.lineTo(offX+scale, offY+scale);
-	ctxToDraw.lineTo(offX, offY+scale);
-	ctxToDraw.lineTo(offX, offY);
-	ctxToDraw.stroke();
-	ctxToDraw.closePath();
+		ctxToDraw.beginPath();
+		ctxToDraw.moveTo(offX, offY);
+		ctxToDraw.lineTo(offX+scale, offY);
+		ctxToDraw.lineTo(offX+scale, offY+scale);
+		ctxToDraw.lineTo(offX, offY+scale);
+		ctxToDraw.lineTo(offX, offY);
+		ctxToDraw.stroke();
+		ctxToDraw.closePath();
+	} else {
+		ctxToDraw.fillStyle = "black";
+		ctxToDraw.font = "26pt Calibri,Geneva,Arial";
+		ctxToDraw.fillText('N/A',2.7/4*canSize/2,4.5/4*canSize/2);
+	}
 }
