@@ -550,7 +550,7 @@ function computeAffinityMatrixSymCont(shape) {
 	}
 
 	var parts = Object.keys(sim);
-
+	dispMatSymCont = false;
 	// For each part of the shape that has been given to teams
 	for(var i=0; i<parts.length; i++) {
 		// (a given part A)
@@ -605,7 +605,7 @@ function computeAffinityMatrixSymCont(shape) {
 						nb_occ_mat[j][id_part_i]++;
 					}
 				}
-			} else { dispMatSymCont = false; }				
+			}				
 		}
 	}
 
@@ -685,6 +685,7 @@ function computeAffinityMatrixSymNoCont(shape) {
 	}
 
 	var parts = Object.keys(sim);
+	dispMatSymNoCont = false;
 
 	// For each part of the shape that has been given to teams
 	for(var i=0; i<parts.length; i++) {
@@ -740,7 +741,7 @@ function computeAffinityMatrixSymNoCont(shape) {
 						nb_occ_mat[j][id_part_i]++;
 					}
 				}
-			} else { dispMatSymNoCont = false; }
+			}
 		}
 	}
 
@@ -820,6 +821,7 @@ function computeAffinityMatrixNoSymCont(shape) {
 	}
 
 	var parts = Object.keys(sim);
+	dispMatNoSymCont = false;
 
 	// For each part of the shape that has been given to teams
 	for(var i=0; i<parts.length; i++) {
@@ -872,7 +874,7 @@ function computeAffinityMatrixNoSymCont(shape) {
 						nb_occ_mat[id_part_i][j]++;
 					}
 				}
-			} else { dispMatNoSymCont = false;}
+			}
 		}
 	}
 
@@ -952,6 +954,7 @@ function computeAffinityMatrixNoSymNoCont(shape) {
 	}
 
 	var parts = Object.keys(sim);
+	dispMatNoSymNoCont = false;
 
 	// For each part of the shape that has been given to teams
 	for(var i=0; i<parts.length; i++) {
@@ -1004,7 +1007,7 @@ function computeAffinityMatrixNoSymNoCont(shape) {
 						nb_occ_mat[id_part_i][j]++;
 					}
 				}
-			} else { dispMatNoSymNoCont = false;}
+			}
 		}
 	}
 
