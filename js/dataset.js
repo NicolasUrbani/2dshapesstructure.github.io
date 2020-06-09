@@ -22,6 +22,7 @@ var popoverDisplayed;
 var ShapeDisplayed;
 var shapeName;
 var numPartold;
+var numPartClicked;
 
 var similarities;
 var intershape;
@@ -29,6 +30,8 @@ var classement;
 
 var shapeIntername;
 var partIntername;
+
+var seeOtherclicked;
 
 var affinityMatrices;
 
@@ -38,7 +41,7 @@ var numCol = -1;
 function doLoad() {
 	
 	hideElement('sidePanel');
-	
+	hideElement('slider');
 	// Show the popover to help users
 	$('#labelswrapper').popover('show');
 	
@@ -87,7 +90,7 @@ function doLoad() {
 	// Create canvas for affinity matrices vote
 	var matricesCanvasContainer = document.getElementById("matricescanvascontainer");
 	
-	
+	seeOtherclicked = false;
 	
 	var auxCanvas = document.createElement('canvas');
 	auxCanvas.setAttribute('id','colorbar');
@@ -133,10 +136,15 @@ function handleClickCategory(e) {
 
 	// Hiding the side panel in case it was displayed
 	hideElement('sidePanel');
+	hideElement('slider');
 	
 	// Hide the popover to help users
 	$('#labelswrapper').popover('hide');
 	
+	seeOtherclicked = false;
+	var slider = document.getElementById("percentageslider");
+	slider.oninput = function() {
+	}
 	
 	var aux; 
 	if (e.srcElement == null) {
@@ -179,6 +187,24 @@ function displayShapeCategory() {
 	if (document.getElementById("legcontcanva")!=null){document.getElementById("legcontcanva").remove();}
 	if (document.getElementById("legnocontcanva")!=null){document.getElementById("legnocontcanva").remove();}
 	if (document.getElementById("othershapelink")!=null){document.getElementById("othershapelink").remove();}
+
+	// Clear the remaining canvas
+	var canDeleted = 0;
+	for (var s = 0; s < nbCanvas ; s++) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+		ctxToDraw.clearRect(0,0,canSize,canSize);
+
+		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
+		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
+		canToDraw.removeEventListener('click',handleShapeClick,false);
+		
+		canToDraw.style = "cursor: default;";
+		canToDraw.remove();
+		canDeleted++;
+		
+	}
+	nbCanvas = nbCanvas - canDeleted;
 
 	// Update the number of canvas
 	while (nbCanvas < shapenames.length) {
@@ -431,6 +457,7 @@ function displayAffinityMatrices(shape) {
 }
 
 function displayShapeSimilarities(shape, part) {
+	displayElement('slider');
 	
 	if (!popoverDisplayed) {
 		// Hide the popover that tells users to click on a shape
@@ -492,21 +519,22 @@ function displayShapeSimilarities(shape, part) {
 
 	var slider = document.getElementById("percentageslider");
 	slider.oninput = function() {
-		drawSelectedSimilarities(shapeName, numPartold);
+		//drawSelectedSimilarities(shapeName, numPartold);
+		displayShapeSimilarities(shapeName, numPartClicked);
 	}
 
 }
 
 function drawSelectedSimilarities(shape, part) {
 	var slider = document.getElementById("percentageslider");
-
+	console.log(similarities);
 	var contextKeys = Object.keys(similarities.context);
 	var nocontextKeys = Object.keys(similarities.nocontext);
 
 	var selectedContextKeys = [];
 	var selectedNoContextKeys = [];
 
-	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+	var classementLimite = Math.round((slider.value/100)*classement["ranking_with"].length);
 	
 	for (var k = 0; k<contextKeys.length; k++) {
 		var teamId = contextKeys[k];
@@ -526,14 +554,18 @@ function drawSelectedSimilarities(shape, part) {
 	var nbContext = Object.keys(selectedContextKeys).length;
 	var nbNocontext = Object.keys(selectedNoContextKeys).length;
 	
-	
+	console.log("NbCanvas :" + nbCanvas);
+	if (document.getElementById("legcontcanva")!=null){document.getElementById("legcontcanva").remove();}
 	if (document.getElementById("legnocontcanva")!=null){document.getElementById("legnocontcanva").remove();}
+	var canDeleted =0;
 	for (var i=0; i<nbCanvas;i++){
 			document.getElementById('canvas'+i).remove();
+			//console.log(i);
+			canDeleted++;
 	
 	}
-	nbCanvas = 0;
-	
+	nbCanvas = nbCanvas - canDeleted;
+	console.log(nbNocontext);
 	//Légend avec context
 	if (document.getElementById("legcontcanva")==null &&nbContext>0){
 		var legendContext = document.createElement('canvas');
@@ -556,7 +588,7 @@ function drawSelectedSimilarities(shape, part) {
 		ctxl.fillText("selected part",7*canSize/20,1.5*canSize/20);
 		ctxl.fillText("parts judged similar with context",26*canSize/20,1.5*canSize/20);
 	}
-
+	
 	// Update the number of canvas
 	while (nbCanvas < nbContext + nbNocontext) {
 		// Create new canvases to meet the requirements
@@ -571,8 +603,9 @@ function drawSelectedSimilarities(shape, part) {
 		ctx.translate(0, canSize);
 	   // flip context vertically
 		ctx.scale(1, -1);
-		if (nbNocontext!=0 && nbCanvas == nbContext){
-		 
+		console.log(nbNocontext + "khohln" + nbCanvas + " "+ nbContext);
+		if (nbNocontext>0 && nbCanvas == nbContext){
+		 console.log("jajaoifnoghb");
 			var legend2Context = document.createElement('canvas');
 			legend2Context.setAttribute('id','legnocontcanva');
 			legend2Context.setAttribute('width',canvasContainer.clientWidth);
@@ -584,7 +617,19 @@ function drawSelectedSimilarities(shape, part) {
 
 	//see similar part from other shapes
 	var interKeys = Object.keys(intershape.nocontext);
-	var nbInter = interKeys.length;
+	var interKeysSelected = [];
+	var slider = document.getElementById("percentageslider");
+
+	var classementLimite = Math.round((slider.value/100)*classement["ranking_with"].length);
+	
+	for (var k = 0; k<interKeys.length; k++) {
+		var teamId = interKeys[k];
+		if (classement["ranking_without"][parseInt(teamId,10)] >= classementLimite) {
+			interKeysSelected.push(teamId);
+		}
+	}
+	var nbInter = interKeysSelected.length;
+	if (document.getElementById("othershapelink")!=null){document.getElementById("othershapelink").remove();}
 	if (document.getElementById("othershapelink")==null && nbInter>0){
 		shapeIntername=shape;
 		partIntername=part;
@@ -612,7 +657,7 @@ function drawSelectedSimilarities(shape, part) {
 			drawSimilarities(ctxToDraw,9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,PartsInfo.parts,part,similarities.context[selectedContextKeys[s]],true);
 
 		} else {
-			if (s==nbContext){
+			if (s==nbContext && nbNocontext>0){
 				var legend2Context = document.getElementById("legnocontcanva");
 				var ctxl = legend2Context.getContext('2d');
 				ctxl.fillStyle = "red";
@@ -634,9 +679,14 @@ function drawSelectedSimilarities(shape, part) {
 
 	}
 	
+	if (seeOtherclicked==true && otherlink!=undefined){
+		otherlink.click();
+	}
+	
 
 	// Clear the remaining canvas
-	for (var s = nbContext + nbNocontext; s < nbCanvas ; s++) {
+	var canDeleted = 0;
+	for (var s = nbContext + nbNocontext + nbInter; s < nbCanvas ; s++) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
 		ctxToDraw.clearRect(0,0,canSize,canSize);
@@ -646,8 +696,11 @@ function drawSelectedSimilarities(shape, part) {
 		canToDraw.removeEventListener('click',handleShapeClick,false);
 		
 		canToDraw.style = "cursor: default;";
+		canToDraw.remove();
+		canDeleted++;
 		
 	}
+	nbCanvas = nbCanvas - canDeleted;
 
 	// Remove event listeners on all canvases
 	for (var s = 0; s < nbCanvas ; s++) {
@@ -917,12 +970,14 @@ function highlightParts(e) {
 
 function handlePartClick(e) {
 	if (numPartold != 1) {
-		displayShapeSimilarities(shapeName,numPartold);
+		numPartClicked = numPartold
+		displayShapeSimilarities(shapeName,numPartClicked);
 	}
 }
 
 function handleOtherShapeClick(e) {
 		
+	seeOtherclicked = true;
 	var xhr_object=new XMLHttpRequest();
 	xhr_object.open("GET","JSON/PartsSimilarity/"+shapeIntername+".json",false);
 	xhr_object.onreadystatechange  = function() { 
@@ -936,11 +991,12 @@ function handleOtherShapeClick(e) {
 	}; 
 	xhr_object.send(null);
 
+
 	var interKeys = Object.keys(intershape.nocontext);
 	var interKeysSelected = [];
 	var slider = document.getElementById("percentageslider");
 
-	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+	var classementLimite = Math.round((slider.value/100)*classement["ranking_with"].length);
 	
 	for (var k = 0; k<interKeys.length; k++) {
 		var teamId = interKeys[k];
@@ -948,11 +1004,56 @@ function handleOtherShapeClick(e) {
 			interKeysSelected.push(teamId);
 		}
 	}
+	
+	var contextKeys = Object.keys(similarities.context);
+	var nocontextKeys = Object.keys(similarities.nocontext);
 
+	var selectedContextKeys = [];
+	var selectedNoContextKeys = [];
+
+	var classementLimite = Math.round((slider.value/100)*classement["ranking_with"].length);
+	
+	for (var k = 0; k<contextKeys.length; k++) {
+		var teamId = contextKeys[k];
+		if (classement["ranking_with"][parseInt(teamId,10)] >= classementLimite) {
+			selectedContextKeys.push(teamId);
+		}
+	}
+
+	for (var k = 0; k<nocontextKeys.length; k++) {
+		var teamId = nocontextKeys[k];
+		if (classement["ranking_without"][parseInt(teamId,10)] >= classementLimite) {
+			selectedNoContextKeys.push(teamId);
+		}
+	}
+
+	var canvasContainer = document.getElementById("canvascontainer");
+	var nbContext = Object.keys(selectedContextKeys).length;
+	var nbNocontext = Object.keys(selectedNoContextKeys).length;
 	var nbInter = interKeysSelected.length;
 	var canvasContainer = document.getElementById("canvascontainer");
-	var nbContext = Object.keys(similarities.context).length;
-	var nbNocontext = Object.keys(similarities.nocontext).length;
+	
+	// Clear the remaining canvas
+	var canDeleted = 0;
+	s = nbContext + nbNocontext;
+	console.log("nbCanva "+nbCanvas + "nbCo"+nbContext+"nbno"+nbNocontext);
+	while (s < nbCanvas) {
+		var canToDraw = document.getElementById("canvas" + s);
+		var ctxToDraw = canToDraw.getContext('2d');
+		ctxToDraw.clearRect(0,0,canSize,canSize);
+
+		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
+		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
+		canToDraw.removeEventListener('click',handleShapeClick,false);
+		
+		canToDraw.style = "cursor: default;";
+		canToDraw.remove();
+		canDeleted++;
+		s++;
+		
+	}
+	nbCanvas = nbCanvas - canDeleted;
+
 	while (nbCanvas < nbContext + nbNocontext + nbInter) {
 		// Create new canvases to meet the requirements
 		var auxCanvas = document.createElement('canvas');
@@ -1009,22 +1110,12 @@ function handleOtherShapeClick(e) {
 		ctxToDraw.fillStyle = "black";
 		ctxToDraw.font = "18pt Calibri,Geneva,Arial";
 		ctxToDraw.fillText(nameFile,0,0);
+		//console.log("création other");
+		
 		
 	}
+		
 	
-	// Clear the remaining canvas
-	for (var s = nbContext + nbNocontext + nbInter; s < nbCanvas ; s++) {
-		var canToDraw = document.getElementById("canvas" + s);
-		var ctxToDraw = canToDraw.getContext('2d');
-		ctxToDraw.clearRect(0,0,canSize,canSize);
-
-		canToDraw.removeEventListener('mouseenter',highlightCanvas,false);
-		canToDraw.removeEventListener('mouseleave',dehighlightCanvas,false);
-		canToDraw.removeEventListener('click',handleShapeClick,false);
-		
-		canToDraw.style = "cursor: default;";
-		
-	}
 }
 
 function displayPartsHighlighted(partsToDisplay) {
