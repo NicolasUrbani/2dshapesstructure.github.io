@@ -351,12 +351,22 @@ function handleShapeClick(e) {
 	}	
 	
 	var idCanvas = parseInt(auxId.split('canvas')[1]);
+	
+		
 
 	if (idCanvas < shapenames.length) {
-		var shapeToDisplay = shapenames[idCanvas];
-		displayPartsHighlighted(shapeToDisplay);
+
+		shapeName = shapenames[idCanvas];
+
+		var slider = document.getElementById("percentageslider");
+		slider.oninput = function() {
+			displayAffinityMatrices(shapeName);
+		}
+
+		displayPartsHighlighted(shapeName);
 		
 	}
+
 }
 
 function highlightColumn(e) {
@@ -533,7 +543,7 @@ function computeAffinityMatrixSymCont(shape) {
 						nb_occ_mat[j][id_part_i]++;
 					}
 				}
-			}
+			} 
 		}
 	}
 
@@ -948,6 +958,7 @@ function computeAffinityMatrixNoSymNoCont(shape) {
 function displayAffinityMatrices(shape) {
 
 	displayElement('sidePanel');
+	displayElement('slider');
 
 	// Fetch the matrices of this shape
 	var shapeName = shape.slice(0, shape.lastIndexOf("_"));
@@ -1057,10 +1068,7 @@ function displayShapeSimilarities(shape, part) {
 	slider.oninput = function() {
 		//drawSelectedSimilarities(shapeName, numPartold);
 		displayShapeSimilarities(shapeName, numPartClicked);
-		computeAffinityMatrixNoSymCont(shapeName);
-		computeAffinityMatrixNoSymNoCont(shapeName);
-		computeAffinityMatrixSymCont(shapeName);
-		computeAffinityMatrixSymNoCont(shapeName);
+		displayAffinityMatrices(shapeName);
 	}
 
 }
@@ -1075,7 +1083,6 @@ function drawSelectedSimilarities(shape, part) {
 	var selectedNoContextKeys = [];
 
 	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
-	console.log(classementLimite);
 	
 	for (var k = 0; k<contextKeys.length; k++) {
 		var teamId = contextKeys[k];
