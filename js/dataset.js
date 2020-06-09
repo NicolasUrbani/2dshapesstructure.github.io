@@ -130,6 +130,17 @@ function doLoad() {
 	linka.setAttribute('href', 'https://deepai.org/machine-learning-glossary-and-terms/affinity-matrix');
 	linka.innerHTML='more about Affinity Matrix';
 	divlink.appendChild(linka);
+
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/ranking.json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+			
+			classement = eval('('+xhr_object.responseText+')');
+			
+		}
+	}; 
+	xhr_object.send(null);
 } 
 
 function handleClickCategory(e) {
@@ -401,13 +412,545 @@ function handleColumnClick(e) {
 	}
 }
 
+function computeAffinityMatrixSymCont(shape) {
+
+	var sim;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/PartsSimilarity/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			sim = aux["intrashape"];
+		}
+	}; 
+	xhr_object.send(null);
+
+	var nPart;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Parts/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			nPart = numPart(aux.parts);
+		}
+	}; 
+	xhr_object.send(null);
+
+	var slider = document.getElementById("percentageslider");
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+
+	// Creation of the affinity matrix
+	var nb_sim_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_sim_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_sim_mat[i][j] = 1;
+			} else {
+				nb_sim_mat[i][j] = 0;
+				nb_sim_mat[j][i] = 0;
+			}
+		}
+	}
+
+	// Creation of the matrix containing the number of occasions two parts could be judged similar
+	var nb_occ_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_occ_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_occ_mat[i][j] = 1;
+			} else {
+				nb_occ_mat[i][j] = 0;
+				nb_occ_mat[j][i] = 0;
+			}
+		}
+	}
+
+	var parts = Object.keys(sim);
+
+	// For each part of the shape that has been given to teams
+	for(var i=0; i<parts.length; i++) {
+		// (a given part A)
+		// we get the set of similar parts for each team	
+		var parts_sim_i_cont = sim[parts[i]].context;
+		var teams = Object.keys(parts_sim_i_cont);
+		var id_part_i = parseInt(parts[i],10)-2;
+		// and for each team that has judged this part
+		for(var t=0; t<teams.length; t++) {
+			var team = parseInt(teams[t],10);
+			// we check if this team performed well enough on the gold standard to be taken into account
+			if (classement["ranking_with"][team] <= classementLimite) {
+				// if that's the case, we get the parts they judged similar to the first one
+				var sim_i = parts_sim_i_cont[teams[t]];
+				// if there is only one part similar
+				if (!Array.isArray(sim_i)) {
+					// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+					nb_sim_mat[id_part_i][sim_i-2]+=1;
+					nb_sim_mat[sim_i-2][id_part_i]+=1;
+				// else if there is more than one part
+				} else {
+					// for each part 
+					for(var j=0; j<sim_i.length; j++) {
+						// (a given part B)
+						// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						var id_part_j = sim_i[j]-2;
+						nb_sim_mat[id_part_i][id_part_j]++;
+						nb_sim_mat[id_part_j][id_part_i]++;
+						// and to compute the implicit similarities, we look at all the other part of the shape
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){
+								// and if one part is also judged similar to the first part, it is similar to the second one too
+								// (if B and C are similar to A, they are implicitly judged similar)
+								if (sim_i.includes(p+2)) {
+									nb_sim_mat[id_part_j][p]++;
+									nb_occ_mat[id_part_j][p]++;
+								// (if C is not similar to A, B and C are implicitly not judged similar and we increment the numbers of occasions B and C are judged similar)
+								} else {
+									nb_occ_mat[p][id_part_j]++;									
+									nb_occ_mat[id_part_j][p]++;
+								}
+							}
+						}
+					}
+				}
+				// for each part B, we increment the numbers of occasins A and B are judged similar
+				for(var j=0; j<nPart-1; j++) {
+					if(id_part_i != j) {
+						nb_occ_mat[id_part_i][j]++;
+						nb_occ_mat[j][id_part_i]++;
+					}
+				}
+			}
+		}
+	}
+
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=0; j<nPart-1; j++) {
+			if (nb_occ_mat[i][j] != 0) {
+				nb_sim_mat[i][j] /= nb_occ_mat[i][j];
+			}
+		}
+	}
+
+	console.log(nb_sim_mat);
+	return nb_sim_mat;
+
+}
+
+function computeAffinityMatrixSymNoCont(shape) {
+
+	var sim;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/PartsSimilarity/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			sim = aux["intrashape"];
+		}
+	}; 
+	xhr_object.send(null);
+
+	var nPart;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Parts/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			nPart = numPart(aux.parts);
+		}
+	}; 
+	xhr_object.send(null);
+
+	var slider = document.getElementById("percentageslider");
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+
+	// Creation of the affinity matrix
+	var nb_sim_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_sim_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_sim_mat[i][j] = 1;
+			} else {
+				nb_sim_mat[i][j] = 0;
+				nb_sim_mat[j][i] = 0;
+			}
+		}
+	}
+
+	// Creation of the matrix containing the number of occasions two parts could be judged similar
+	var nb_occ_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_occ_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_occ_mat[i][j] = 1;
+			} else {
+				nb_occ_mat[i][j] = 0;
+				nb_occ_mat[j][i] = 0;
+			}
+		}
+	}
+
+	var parts = Object.keys(sim);
+
+	// For each part of the shape that has been given to teams
+	for(var i=0; i<parts.length; i++) {
+		// (a given part A)
+		// we get the set of similar parts for each team	
+		var parts_sim_i_nocont = sim[parts[i]].nocontext;
+		var teams = Object.keys(parts_sim_i_nocont);
+		var id_part_i = parseInt(parts[i],10)-2;
+		// and for each team that has judged this part
+		for(var t=0; t<teams.length; t++) {
+			var team = parseInt(teams[t],10);
+			// we check if this team performed well enough on the gold standard to be taken into account
+			if (classement["ranking_with"][team] <= classementLimite) {
+				// if that's the case, we get the parts they judged similar to the first one
+				var sim_i = parts_sim_i_nocont[teams[t]];
+				// if there is only one part similar
+				if (!Array.isArray(sim_i)) {
+					// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+					nb_sim_mat[id_part_i][sim_i-2]+=1;
+					nb_sim_mat[sim_i-2][id_part_i]+=1;
+				// else if there is more than one part
+				} else {
+					// for each part 
+					for(var j=0; j<sim_i.length; j++) {
+						// (a given part B)
+						// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						var id_part_j = sim_i[j]-2;
+						nb_sim_mat[id_part_i][id_part_j]++;
+						nb_sim_mat[id_part_j][id_part_i]++;
+						// and to compute the implicit similarities, we look at all the other part of the shape
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){
+								// and if one part is also judged similar to the first part, it is similar to the second one too
+								// (if B and C are similar to A, they are implicitly judged similar)
+								if (sim_i.includes(p+2)) {
+									nb_sim_mat[id_part_j][p]++;
+									nb_occ_mat[id_part_j][p]++;
+								// (if C is not similar to A, B and C are implicitly not judged similar and we increment the numbers of occasions B and C are judged similar)
+								} else {
+									nb_occ_mat[p][id_part_j]++;									
+									nb_occ_mat[id_part_j][p]++;
+								}
+							}
+						}
+					}
+				}
+				// for each part B, we increment the numbers of occasins A and B are judged similar
+				for(var j=0; j<nPart-1; j++) {
+					if(id_part_i != j) {
+						nb_occ_mat[id_part_i][j]++;
+						nb_occ_mat[j][id_part_i]++;
+					}
+				}
+			}
+		}
+	}
+
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=0; j<nPart-1; j++) {
+			if (nb_occ_mat[i][j] != 0) {
+				nb_sim_mat[i][j] /= nb_occ_mat[i][j];
+			}
+		}
+	}
+
+	return nb_sim_mat;
+
+}
+
+function computeAffinityMatrixNoSymCont(shape) {
+
+	var sim;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/PartsSimilarity/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			sim = aux["intrashape"];
+		}
+	}; 
+	xhr_object.send(null);
+
+	var nPart;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Parts/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			nPart = numPart(aux.parts);
+		}
+	}; 
+	xhr_object.send(null);
+
+	var slider = document.getElementById("percentageslider");
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+
+	// Creation of the affinity matrix
+	var nb_sim_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_sim_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_sim_mat[i][j] = 1;
+			} else {
+				nb_sim_mat[i][j] = 0;
+				nb_sim_mat[j][i] = 0;
+			}
+		}
+	}
+
+	// Creation of the matrix containing the number of occasions two parts could be judged similar
+	var nb_occ_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_occ_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_occ_mat[i][j] = 1;
+			} else {
+				nb_occ_mat[i][j] = 0;
+				nb_occ_mat[j][i] = 0;
+			}
+		}
+	}
+
+	var parts = Object.keys(sim);
+
+	// For each part of the shape that has been given to teams
+	for(var i=0; i<parts.length; i++) {
+		// (a given part A)
+		// we get the set of similar parts for each team	
+		var parts_sim_i_cont = sim[parts[i]].context;
+		var teams = Object.keys(parts_sim_i_cont);
+		var id_part_i = parseInt(parts[i],10)-2;
+		// and for each team that has judged this part
+		for(var t=0; t<teams.length; t++) {
+			var team = parseInt(teams[t],10);
+			// we check if this team performed well enough on the gold standard to be taken into account
+			if (classement["ranking_with"][team] <= classementLimite) {
+				// if that's the case, we get the parts they judged similar to the first one
+				var sim_i = parts_sim_i_cont[teams[t]];
+				// if there is only one part similar
+				if (!Array.isArray(sim_i)) {
+					// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+					nb_sim_mat[id_part_i][sim_i-2]+=1;
+				// else if there is more than one part
+				} else {
+					// for each part 
+					for(var j=0; j<sim_i.length; j++) {
+						// (a given part B)
+						// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						var id_part_j = sim_i[j]-2;
+						nb_sim_mat[id_part_i][id_part_j]++;
+						// and to compute the implicit similarities, we look at all the other part of the shape
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){
+								// and if one part is also judged similar to the first part, it is similar to the second one too
+								// (if B and C are similar to A, they are implicitly judged similar)
+								if (sim_i.includes(p+2)) {
+									nb_sim_mat[id_part_j][p]++;
+									nb_occ_mat[id_part_j][p]++;
+								// (if C is not similar to A, B and C are implicitly not judged similar and we increment the numbers of occasions B and C are judged similar)
+								} else {
+									nb_occ_mat[p][id_part_j]++;									
+									nb_occ_mat[id_part_j][p]++;
+								}
+							}
+						}
+					}
+				}
+				// for each part B, we increment the numbers of occasins A and B are judged similar
+				for(var j=0; j<nPart-1; j++) {
+					if(id_part_i != j) {
+						nb_occ_mat[id_part_i][j]++;
+					}
+				}
+			}
+		}
+	}
+
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=0; j<nPart-1; j++) {
+			if (nb_occ_mat[i][j] != 0) {
+				nb_sim_mat[i][j] /= nb_occ_mat[i][j];
+			}
+		}
+	}
+
+	return nb_sim_mat;
+
+}
+
+function computeAffinityMatrixNoSymNoCont(shape) {
+
+	var sim;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/PartsSimilarity/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			sim = aux["intrashape"];
+		}
+	}; 
+	xhr_object.send(null);
+
+	var nPart;
+	xhr_object=new XMLHttpRequest();
+	xhr_object.open("GET","JSON/Parts/"+ shape +".json",false);
+	xhr_object.onreadystatechange  = function() { 
+		if(xhr_object.readyState  == 4) {
+
+			var aux = eval('('+xhr_object.responseText+')');
+			nPart = numPart(aux.parts);
+		}
+	}; 
+	xhr_object.send(null);
+
+	var slider = document.getElementById("percentageslider");
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+
+	// Creation of the affinity matrix
+	var nb_sim_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_sim_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_sim_mat[i][j] = 1;
+			} else {
+				nb_sim_mat[i][j] = 0;
+				nb_sim_mat[j][i] = 0;
+			}
+		}
+	}
+
+	// Creation of the matrix containing the number of occasions two parts could be judged similar
+	var nb_occ_mat = [];
+	for(var i=0; i<nPart-1; i++) {
+		nb_occ_mat[i] = new Array(nPart-1);
+	}
+	// Filling the diagonal with 1 and the other with 0
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=i; j<nPart-1; j++) {
+			if (j == i) {
+				nb_occ_mat[i][j] = 1;
+			} else {
+				nb_occ_mat[i][j] = 0;
+				nb_occ_mat[j][i] = 0;
+			}
+		}
+	}
+
+	var parts = Object.keys(sim);
+
+	// For each part of the shape that has been given to teams
+	for(var i=0; i<parts.length; i++) {
+		// (a given part A)
+		// we get the set of similar parts for each team	
+		var parts_sim_i_nocont = sim[parts[i]].nocontext;
+		var teams = Object.keys(parts_sim_i_nocont);
+		var id_part_i = parseInt(parts[i],10)-2;
+		// and for each team that has judged this part
+		for(var t=0; t<teams.length; t++) {
+			var team = parseInt(teams[t],10);
+			// we check if this team performed well enough on the gold standard to be taken into account
+			if (classement["ranking_with"][team] <= classementLimite) {
+				// if that's the case, we get the parts they judged similar to the first one
+				var sim_i = parts_sim_i_nocont[teams[t]];
+				// if there is only one part similar
+				if (!Array.isArray(sim_i)) {
+					// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+					nb_sim_mat[id_part_i][sim_i-2]+=1;
+				// else if there is more than one part
+				} else {
+					// for each part 
+					for(var j=0; j<sim_i.length; j++) {
+						// (a given part B)
+						// we had to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						var id_part_j = sim_i[j]-2;
+						nb_sim_mat[id_part_i][id_part_j]++;
+						// and to compute the implicit similarities, we look at all the other part of the shape
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){
+								// and if one part is also judged similar to the first part, it is similar to the second one too
+								// (if B and C are similar to A, they are implicitly judged similar)
+								if (sim_i.includes(p+2)) {
+									nb_sim_mat[id_part_j][p]++;
+									nb_occ_mat[id_part_j][p]++;
+								// (if C is not similar to A, B and C are implicitly not judged similar and we increment the numbers of occasions B and C are judged similar)
+								} else {
+									nb_occ_mat[p][id_part_j]++;									
+									nb_occ_mat[id_part_j][p]++;
+								}
+							}
+						}
+					}
+				}
+				// for each part B, we increment the numbers of occasins A and B are judged similar
+				for(var j=0; j<nPart-1; j++) {
+					if(id_part_i != j) {
+						nb_occ_mat[id_part_i][j]++;
+					}
+				}
+			}
+		}
+	}
+
+	for(var i=0; i<nPart-1; i++) {
+		for (var j=0; j<nPart-1; j++) {
+			if (nb_occ_mat[i][j] != 0) {
+				nb_sim_mat[i][j] /= nb_occ_mat[i][j];
+			}
+		}
+	}
+
+	return nb_sim_mat;
+
+}
+
 function displayAffinityMatrices(shape) {
 
 	displayElement('sidePanel');
 
 	// Fetch the matrices of this shape
+	var shapeName = shape.slice(0, shape.lastIndexOf("_"));
 	var xhr_object=new XMLHttpRequest();
-	xhr_object.open("GET","JSON/AffinityMatrices/"+shape+".json",false);
+	xhr_object.open("GET","JSON/AffinityMatrices/"+shapeName+".json",false);
 	xhr_object.onreadystatechange  = function() { 
 	    if(xhr_object.readyState  == 4) {
 			
@@ -445,8 +988,8 @@ function displayAffinityMatrices(shape) {
 	nCol = matrices["matrix_with_context"].length;
 	affinityMatrices = matrices;	
 	
-	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_with_context"]);
-	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,matrices["matrix_without_context"]);
+	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,computeAffinityMatrixSymCont(shape));
+	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,computeAffinityMatrixSymNoCont(shape));
 
 	contextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
 	nocontextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
@@ -504,17 +1047,6 @@ function displayShapeSimilarities(shape, part) {
 	}; 
 	xhr_object.send(null);
 
-	xhr_object=new XMLHttpRequest();
-	xhr_object.open("GET","JSON/ranking.json",false);
-	xhr_object.onreadystatechange  = function() { 
-		if(xhr_object.readyState  == 4) {
-			
-			classement = eval('('+xhr_object.responseText+')');
-			
-		}
-	}; 
-	xhr_object.send(null);
-
 	drawSelectedSimilarities(shape, part);
 
 	var slider = document.getElementById("percentageslider");
@@ -527,25 +1059,26 @@ function displayShapeSimilarities(shape, part) {
 
 function drawSelectedSimilarities(shape, part) {
 	var slider = document.getElementById("percentageslider");
-	console.log(similarities);
+	//console.log(similarities);
 	var contextKeys = Object.keys(similarities.context);
 	var nocontextKeys = Object.keys(similarities.nocontext);
 
 	var selectedContextKeys = [];
 	var selectedNoContextKeys = [];
 
-	var classementLimite = Math.round((slider.value/100)*classement["ranking_with"].length);
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
+	console.log(classementLimite);
 	
 	for (var k = 0; k<contextKeys.length; k++) {
 		var teamId = contextKeys[k];
-		if (classement["ranking_with"][parseInt(teamId,10)] >= classementLimite) {
+		if (classement["ranking_with"][parseInt(teamId,10)] <= classementLimite) {
 			selectedContextKeys.push(teamId);
 		}
 	}
 
 	for (var k = 0; k<nocontextKeys.length; k++) {
 		var teamId = nocontextKeys[k];
-		if (classement["ranking_without"][parseInt(teamId,10)] >= classementLimite) {
+		if (classement["ranking_without"][parseInt(teamId,10)] <= classementLimite) {
 			selectedNoContextKeys.push(teamId);
 		}
 	}
@@ -554,7 +1087,7 @@ function drawSelectedSimilarities(shape, part) {
 	var nbContext = Object.keys(selectedContextKeys).length;
 	var nbNocontext = Object.keys(selectedNoContextKeys).length;
 	
-	console.log("NbCanvas :" + nbCanvas);
+	//console.log("NbCanvas :" + nbCanvas);
 	if (document.getElementById("legcontcanva")!=null){document.getElementById("legcontcanva").remove();}
 	if (document.getElementById("legnocontcanva")!=null){document.getElementById("legnocontcanva").remove();}
 	var canDeleted =0;
@@ -565,7 +1098,7 @@ function drawSelectedSimilarities(shape, part) {
 	
 	}
 	nbCanvas = nbCanvas - canDeleted;
-	console.log(nbNocontext);
+	//console.log(nbNocontext);
 	//Légend avec context
 	if (document.getElementById("legcontcanva")==null &&nbContext>0){
 		var legendContext = document.createElement('canvas');
@@ -603,9 +1136,9 @@ function drawSelectedSimilarities(shape, part) {
 		ctx.translate(0, canSize);
 	   // flip context vertically
 		ctx.scale(1, -1);
-		console.log(nbNocontext + "khohln" + nbCanvas + " "+ nbContext);
+		//console.log(nbNocontext + "khohln" + nbCanvas + " "+ nbContext);
 		if (nbNocontext>0 && nbCanvas == nbContext){
-		 console.log("jajaoifnoghb");
+			//console.log("jajaoifnoghb");
 			var legend2Context = document.createElement('canvas');
 			legend2Context.setAttribute('id','legnocontcanva');
 			legend2Context.setAttribute('width',canvasContainer.clientWidth);
@@ -620,11 +1153,11 @@ function drawSelectedSimilarities(shape, part) {
 	var interKeysSelected = [];
 	var slider = document.getElementById("percentageslider");
 
-	var classementLimite = Math.round((slider.value/100)*classement["ranking_with"].length);
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
 	
 	for (var k = 0; k<interKeys.length; k++) {
 		var teamId = interKeys[k];
-		if (classement["ranking_without"][parseInt(teamId,10)] >= classementLimite) {
+		if (classement["ranking_without"][parseInt(teamId,10)] <= classementLimite) {
 			interKeysSelected.push(teamId);
 		}
 	}
@@ -996,11 +1529,11 @@ function handleOtherShapeClick(e) {
 	var interKeysSelected = [];
 	var slider = document.getElementById("percentageslider");
 
-	var classementLimite = Math.round((slider.value/100)*classement["ranking_with"].length);
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
 	
 	for (var k = 0; k<interKeys.length; k++) {
 		var teamId = interKeys[k];
-		if (classement["ranking_without"][parseInt(teamId,10)] >= classementLimite) {
+		if (classement["ranking_without"][parseInt(teamId,10)] <= classementLimite) {
 			interKeysSelected.push(teamId);
 		}
 	}
@@ -1011,18 +1544,18 @@ function handleOtherShapeClick(e) {
 	var selectedContextKeys = [];
 	var selectedNoContextKeys = [];
 
-	var classementLimite = Math.round((slider.value/100)*classement["ranking_with"].length);
+	var classementLimite = Math.round((1-slider.value/100)*classement["ranking_with"].length);
 	
 	for (var k = 0; k<contextKeys.length; k++) {
 		var teamId = contextKeys[k];
-		if (classement["ranking_with"][parseInt(teamId,10)] >= classementLimite) {
+		if (classement["ranking_with"][parseInt(teamId,10)] <= classementLimite) {
 			selectedContextKeys.push(teamId);
 		}
 	}
 
 	for (var k = 0; k<nocontextKeys.length; k++) {
 		var teamId = nocontextKeys[k];
-		if (classement["ranking_without"][parseInt(teamId,10)] >= classementLimite) {
+		if (classement["ranking_without"][parseInt(teamId,10)] <= classementLimite) {
 			selectedNoContextKeys.push(teamId);
 		}
 	}
@@ -1036,7 +1569,7 @@ function handleOtherShapeClick(e) {
 	// Clear the remaining canvas
 	var canDeleted = 0;
 	s = nbContext + nbNocontext;
-	console.log("nbCanva "+nbCanvas + "nbCo"+nbContext+"nbno"+nbNocontext);
+	//console.log("nbCanva "+nbCanvas + "nbCo"+nbContext+"nbno"+nbNocontext);
 	while (s < nbCanvas) {
 		var canToDraw = document.getElementById("canvas" + s);
 		var ctxToDraw = canToDraw.getContext('2d');
@@ -1217,6 +1750,6 @@ function displayPartsHighlighted(partsToDisplay) {
 	ctxl.fillText("secondary parts",7*canSize/20,6*canSize/20);
 	ctxl.fillText("details",7*canSize/20,9.5*canSize/20);
 
-	displayAffinityMatrices(shapeToDisplay);
+	displayAffinityMatrices(shapeName);
 
 }
