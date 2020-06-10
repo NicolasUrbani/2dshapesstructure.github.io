@@ -434,7 +434,7 @@ function highlightColumn(e) {
 	var elemTop = rect.top;
 	
 	var scrolled = window.scrollY;
-	var x = e.pageX - elemLeft;
+	var x = e.pageX - elemLeft - window.scrollX;
 	var y = canSize - (e.pageY - elemTop) + scrolled;
 
 	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
@@ -1125,7 +1125,7 @@ function displayAffinityMatrices(shape) {
 	var ctxToDrawContextn = contextMatrixCanvasn.getContext("2d");
 	var ctxToDrawNoContextn = nocontextMatrixCanvasn.getContext("2d");
 
-	nCol = matrices["matrix_with_context"].length;
+//	nCol = matrices["matrix_with_context"].length;
 
 	computeAffinityMatrixNoSymCont(shape);
 	computeAffinityMatrixNoSymNoCont(shape);
@@ -1402,6 +1402,7 @@ function drawSelectedSimilarities(shape, part) {
 
 function backToShapeCategory() {
 	hideElement('sidePanel');
+	hideElement('slider');
 	displayShapeCategory();
 }
 
@@ -1558,7 +1559,7 @@ function mouseInTriangle(xA,yA,xB,yB,xC,yC,xm,ym,scale,offX,offY){
 
 
 	var scrolled = window.scrollY;
-	var xM = xm;
+	var xM = xm - window.scrollX;
 	var yM = 2*canSize - ym + scrolled;
 
 	var xAM = xM-xA;
