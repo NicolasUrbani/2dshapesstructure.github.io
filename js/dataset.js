@@ -434,7 +434,7 @@ function highlightColumn(e) {
 	var elemTop = rect.top;
 	
 	var scrolled = window.scrollY;
-	var x = e.pageX - elemLeft;
+	var x = e.pageX - elemLeft - window.scrollX;
 	var y = canSize - (e.pageY - elemTop) + scrolled;
 
 	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
@@ -1559,7 +1559,7 @@ function mouseInTriangle(xA,yA,xB,yB,xC,yC,xm,ym,scale,offX,offY){
 
 
 	var scrolled = window.scrollY;
-	var xM = xm;
+	var xM = xm - window.scrollX;
 	var yM = 2*canSize - ym + scrolled;
 
 	var xAM = xM-xA;
