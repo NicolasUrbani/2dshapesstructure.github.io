@@ -1125,7 +1125,7 @@ function displayAffinityMatrices(shape) {
 	var ctxToDrawContextn = contextMatrixCanvasn.getContext("2d");
 	var ctxToDrawNoContextn = nocontextMatrixCanvasn.getContext("2d");
 
-	nCol = matrices["matrix_with_context"].length;
+//	nCol = matrices["matrix_with_context"].length;
 
 	computeAffinityMatrixNoSymCont(shape);
 	computeAffinityMatrixNoSymNoCont(shape);
