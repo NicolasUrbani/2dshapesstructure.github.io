@@ -1028,18 +1028,6 @@ function displayAffinityMatrices(shape) {
 	displayElement('sidePanel');
 	displayElement('slider');
 
-	// Fetch the matrices of this shape
-	var shapeName = shape.slice(0, shape.lastIndexOf("_"));
-	var xhr_object=new XMLHttpRequest();
-	xhr_object.open("GET","JSON/AffinityMatrices/"+shapeName+".json",false);
-	xhr_object.onreadystatechange  = function() { 
-	    if(xhr_object.readyState  == 4) {
-			
-			matrices = eval('('+xhr_object.responseText+')');
-	    }
-	}; 
-	xhr_object.send(null);
-
 	// Colorbar
 	var ctxColorbar = document.getElementById("colorbar").getContext("2d");
 	drawColorbar(ctxColorbar);
@@ -1094,10 +1082,10 @@ function displayAffinityMatrices(shape) {
 	var ctxToDrawContext = contextMatrixCanvas.getContext("2d");
 	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
 
-	nCol = matrices["matrix_with_context"].length;
-
 	computeAffinityMatrixSymCont(shape);
 	computeAffinityMatrixSymNoCont(shape);
+
+	nCol = affMatSymCont.length;
 	
 	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont,dispMatSymCont);
 	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont,dispMatSymNoCont);

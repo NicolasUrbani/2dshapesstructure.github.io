@@ -265,7 +265,6 @@ function drawColorbar(ctxColorbar) {
 function drawAffinityMatrix(ctxToDraw,scale,width,offX,offY,matrix,bool) {	
 
 	ctxToDraw.clearRect(0,0,canSize,canSize);
-	console.log(bool);
 	if (bool) {
 
 		var n = matrix.length;
