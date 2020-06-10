@@ -1402,6 +1402,7 @@ function drawSelectedSimilarities(shape, part) {
 
 function backToShapeCategory() {
 	hideElement('sidePanel');
+	hideElement('slider');
 	displayShapeCategory();
 }
 
