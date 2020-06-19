@@ -82,6 +82,11 @@ for i=1:nb_selections
                         tmp_inter(ind_team) = [tmp_inter(ind_team) [new_data1 new_data2]];
                     end
                 end
+            else
+                if (~isKey(tmp_inter,ind_team))
+                    tmp_inter(ind_team) = [];
+                end
+                tmp_inter(ind_team) = [tmp_inter(ind_team) "-1"];
             end
             part_map(key) = tmp;
             part_map_inter(key) = tmp_inter;
