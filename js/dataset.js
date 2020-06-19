@@ -38,6 +38,11 @@ var affMatSymNoCont;
 var affMatNoSymCont;
 var affMatNoSymNoCont;
 
+var dispMatSymCont;
+var dispMatSymNoCont;
+var dispMatNoSymCont;
+var dispMatNoSymNoCont;
+
 var nCol;
 var numCol = -1;
 
@@ -53,6 +58,10 @@ function doLoad() {
 	nbCanvas = 0;
 	nbSpectralCanvas = 0;
 	popoverDisplayed = false;
+	dispMatSymCont = false;
+	dispMatSymNoCont = false;
+	dispMatNoSymCont = false;
+	dispMatNoSymNoCont= false;
 
 	// Fetch the different classes of the dataset
 	var xhr_object=new XMLHttpRequest();
@@ -102,6 +111,12 @@ function doLoad() {
 	matricesCanvasContainer.appendChild(auxCanvas);
 	
 	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','Symmetrical');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/5);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	
+	var auxCanvas = document.createElement('canvas');
 	auxCanvas.setAttribute('id','ContextTitle');
 	auxCanvas.setAttribute('width',canSize);
 	auxCanvas.setAttribute('height',canSize/10);
@@ -126,6 +141,39 @@ function doLoad() {
 	aux2Canvas.setAttribute('height',canSize);
 	matricesCanvasContainer.appendChild(aux2Canvas);
 	var ctx2 = aux2Canvas.getContext("2d");
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','NonSymmetrical');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/5);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','ContextTitlenosym');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/10);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','contextmatrixCanvasnosym');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	var ctx = auxCanvas.getContext("2d");
+	
+	var auxCanvas = document.createElement('canvas');
+	auxCanvas.setAttribute('id','NoContextTitlenosym');
+	auxCanvas.setAttribute('width',canSize);
+	auxCanvas.setAttribute('height',canSize/10);
+	matricesCanvasContainer.appendChild(auxCanvas);
+	  
+	var aux2Canvas = document.createElement('canvas');
+	aux2Canvas.setAttribute('id','nocontextmatrixCanvasnosym');
+	aux2Canvas.setAttribute('width',canSize);
+	aux2Canvas.setAttribute('height',canSize);
+	matricesCanvasContainer.appendChild(aux2Canvas);
+	var ctx2 = aux2Canvas.getContext("2d");
+	
 	
 	var divlink = document.createElement("div");
 	matricesCanvasContainer.appendChild(divlink);
@@ -386,16 +434,24 @@ function highlightColumn(e) {
 	var elemTop = rect.top;
 	
 	var scrolled = window.scrollY;
-	var x = e.pageX - elemLeft;
+	var x = e.pageX - elemLeft - window.scrollX;
 	var y = canSize - (e.pageY - elemTop) + scrolled;
 
 	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
 	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
+	var contextMatrixCanvasn = document.getElementById("contextmatrixCanvasnosym");
+	var nocontextMatrixCanvasn = document.getElementById("nocontextmatrixCanvasnosym");
+	
 	var mainCanvas = document.getElementById("maincanva");
 
 	var ctxToDrawContext = contextMatrixCanvas.getContext("2d");
 	var ctxToDrawNoContext = nocontextMatrixCanvas.getContext("2d");
+	var ctxToDrawContextn = contextMatrixCanvasn.getContext("2d");
+	var ctxToDrawNoContextn = nocontextMatrixCanvasn.getContext("2d");
+	
 	var ctxToDrawMain = mainCanvas.getContext("2d");
+	
+	
 
 	if (x>=canSize/20 && x<= 19*canSize/20 && y>=(canSize/20) && y<=(19*canSize/20)) {
 		x = x - canSize/20 ;
@@ -406,11 +462,16 @@ function highlightColumn(e) {
 
 			numCol = number;
 
-			drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont);
-			drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont);
+			drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont,dispMatSymCont);
+			drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont,dispMatSymNoCont);
+			drawAffinityMatrix(ctxToDrawContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymCont,dispMatNoSymCont);
+			drawAffinityMatrix(ctxToDrawNoContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymNoCont,dispMatNoSymNoCont);
+
 
 			drawHighlightedColumn(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
 			drawHighlightedColumn(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
+			drawHighlightedColumn(ctxToDrawContextn,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
+			drawHighlightedColumn(ctxToDrawNoContextn,9*canSize/10,2,canSize/20,canSize/20,size,numCol);
 
 			ctxToDrawMain.clearRect(0,0,2*canSize,2*canSize);
 			drawObjectParts(ctxToDrawMain,2*9*canSize/10,1,canSize/20,canSize/20,currentShapeInfo.points,currentShapeInfo.triangles,currentPartsInfo.parts);	
@@ -489,7 +550,7 @@ function computeAffinityMatrixSymCont(shape) {
 	}
 
 	var parts = Object.keys(sim);
-
+	dispMatSymCont = false;
 	// For each part of the shape that has been given to teams
 	for(var i=0; i<parts.length; i++) {
 		// (a given part A)
@@ -502,6 +563,7 @@ function computeAffinityMatrixSymCont(shape) {
 			var team = parseInt(teams[t],10);
 			// we check if this team performed well enough on the gold standard to be taken into account
 			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatSymCont = true;
 				// if that's the case, we get the parts they judged similar to the first one
 				var sim_i = parts_sim_i_cont[teams[t]];
 				// if there is only one part similar
@@ -543,7 +605,7 @@ function computeAffinityMatrixSymCont(shape) {
 						nb_occ_mat[j][id_part_i]++;
 					}
 				}
-			} 
+			}				
 		}
 	}
 
@@ -623,6 +685,7 @@ function computeAffinityMatrixSymNoCont(shape) {
 	}
 
 	var parts = Object.keys(sim);
+	dispMatSymNoCont = false;
 
 	// For each part of the shape that has been given to teams
 	for(var i=0; i<parts.length; i++) {
@@ -636,6 +699,7 @@ function computeAffinityMatrixSymNoCont(shape) {
 			var team = parseInt(teams[t],10);
 			// we check if this team performed well enough on the gold standard to be taken into account
 			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatSymNoCont = true;
 				// if that's the case, we get the parts they judged similar to the first one
 				var sim_i = parts_sim_i_nocont[teams[t]];
 				// if there is only one part similar
@@ -757,6 +821,7 @@ function computeAffinityMatrixNoSymCont(shape) {
 	}
 
 	var parts = Object.keys(sim);
+	dispMatNoSymCont = false;
 
 	// For each part of the shape that has been given to teams
 	for(var i=0; i<parts.length; i++) {
@@ -770,6 +835,7 @@ function computeAffinityMatrixNoSymCont(shape) {
 			var team = parseInt(teams[t],10);
 			// we check if this team performed well enough on the gold standard to be taken into account
 			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatNoSymCont = true;
 				// if that's the case, we get the parts they judged similar to the first one
 				var sim_i = parts_sim_i_cont[teams[t]];
 				// if there is only one part similar
@@ -888,6 +954,7 @@ function computeAffinityMatrixNoSymNoCont(shape) {
 	}
 
 	var parts = Object.keys(sim);
+	dispMatNoSymNoCont = false;
 
 	// For each part of the shape that has been given to teams
 	for(var i=0; i<parts.length; i++) {
@@ -901,6 +968,7 @@ function computeAffinityMatrixNoSymNoCont(shape) {
 			var team = parseInt(teams[t],10);
 			// we check if this team performed well enough on the gold standard to be taken into account
 			if (classement["ranking_with"][team] <= classementLimite) {
+				dispMatNoSymNoCont = true;
 				// if that's the case, we get the parts they judged similar to the first one
 				var sim_i = parts_sim_i_nocont[teams[t]];
 				// if there is only one part similar
@@ -977,6 +1045,20 @@ function displayAffinityMatrices(shape) {
 	drawColorbar(ctxColorbar);
 
 
+	// Symmetrical and no symmetrical title before affinity matrices
+	var ctxContext = document.getElementById("Symmetrical").getContext("2d");
+	var ctxnocontext = document.getElementById("NonSymmetrical").getContext("2d");
+	
+	
+	ctxContext.fillStyle = "black";
+	ctxContext.font = "18pt Calibri,Geneva,Arial";
+	ctxContext.fillText('Symmetrical',canSize/5,canSize/10);
+
+	
+	ctxnocontext.fillStyle = "black";
+	ctxnocontext.font = "18pt Calibri,Geneva,Arial";
+	ctxnocontext.fillText("Non symmetrical",canSize/10,canSize/10);
+
 	// Context and no context title before affinity matrices
 	var ctxContext = document.getElementById("ContextTitle").getContext("2d");
 	var ctxnocontext = document.getElementById("NoContextTitle").getContext("2d");
@@ -991,6 +1073,20 @@ function displayAffinityMatrices(shape) {
 	ctxnocontext.font = "18pt Calibri,Geneva,Arial";
 	ctxnocontext.fillText("No context",canSize/4,canSize/10);
 	
+	// Context and no context title before affinity matrices
+	var ctxContextn = document.getElementById("ContextTitlenosym").getContext("2d");
+	var ctxnocontextn = document.getElementById("NoContextTitlenosym").getContext("2d");
+	
+	
+	ctxContextn.fillStyle = "black";
+	ctxContextn.font = "18pt Calibri,Geneva,Arial";
+	ctxContextn.fillText('Context',canSize/4,canSize/10);
+
+	
+	ctxnocontextn.fillStyle = "black";
+	ctxnocontextn.font = "18pt Calibri,Geneva,Arial";
+	ctxnocontextn.fillText("No context",canSize/4,canSize/10);
+	
 	// Affinity matrices
 	var contextMatrixCanvas = document.getElementById("contextmatrixCanvas");
 	var nocontextMatrixCanvas = document.getElementById("nocontextmatrixCanvas");
@@ -1003,15 +1099,56 @@ function displayAffinityMatrices(shape) {
 	computeAffinityMatrixSymCont(shape);
 	computeAffinityMatrixSymNoCont(shape);
 	
-	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont);
-	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont);
+	drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont,dispMatSymCont);
+	drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont,dispMatSymNoCont);
 
-	contextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
-	nocontextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
+	if (dispMatSymCont){
+		contextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);	
+		contextMatrixCanvas.addEventListener('click',handleColumnClick,false);
+	} else {
+		contextMatrixCanvas.removeEventListener('mousemove',highlightColumn,false);
+		contextMatrixCanvas.removeEventListener('click',handleColumnClick,false);
+	}
 	
-	contextMatrixCanvas.addEventListener('click',handleColumnClick,false);
-	nocontextMatrixCanvas.addEventListener('click',handleColumnClick,false);
+	if (dispMatSymNoCont) {
+		nocontextMatrixCanvas.addEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvas.addEventListener('click',handleColumnClick,false);
+	} else {
+		nocontextMatrixCanvas.removeEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvas.removeEventListener('click',handleColumnClick,false);	
+	}
+	
+	// Affinity matrices
+	var contextMatrixCanvasn = document.getElementById("contextmatrixCanvasnosym");
+	var nocontextMatrixCanvasn = document.getElementById("nocontextmatrixCanvasnosym");
 
+	var ctxToDrawContextn = contextMatrixCanvasn.getContext("2d");
+	var ctxToDrawNoContextn = nocontextMatrixCanvasn.getContext("2d");
+
+//	nCol = matrices["matrix_with_context"].length;
+
+	computeAffinityMatrixNoSymCont(shape);
+	computeAffinityMatrixNoSymNoCont(shape);
+	
+	drawAffinityMatrix(ctxToDrawContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymCont,dispMatNoSymCont);
+	drawAffinityMatrix(ctxToDrawNoContextn,9*canSize/10,2,canSize/20,canSize/20,affMatNoSymNoCont,dispMatNoSymNoCont);
+	
+	if(dispMatNoSymCont){
+		contextMatrixCanvasn.addEventListener('mousemove',highlightColumn,false);
+		
+		contextMatrixCanvasn.addEventListener('click',handleColumnClick,false);
+	} else {
+		contextMatrixCanvasn.removeEventListener('mousemove',highlightColumn,false);
+		contextMatrixCanvasn.removeEventListener('click',handleColumnClick,false);
+	}
+	
+	if (dispMatNoSymNoCont) {
+		nocontextMatrixCanvasn.addEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvasn.addEventListener('click',handleColumnClick,false);
+	} else {
+		nocontextMatrixCanvasn.removeEventListener('mousemove',highlightColumn,false);
+		nocontextMatrixCanvasn.removeEventListener('click',handleColumnClick,false);
+	}
 }
 
 function displayShapeSimilarities(shape, part) {
@@ -1265,6 +1402,7 @@ function drawSelectedSimilarities(shape, part) {
 
 function backToShapeCategory() {
 	hideElement('sidePanel');
+	hideElement('slider');
 	displayShapeCategory();
 }
 
@@ -1421,7 +1559,7 @@ function mouseInTriangle(xA,yA,xB,yB,xC,yC,xm,ym,scale,offX,offY){
 
 
 	var scrolled = window.scrollY;
-	var xM = xm;
+	var xM = xm - window.scrollX;
 	var yM = 2*canSize - ym + scrolled;
 
 	var xAM = xM-xA;
@@ -1496,8 +1634,8 @@ function highlightParts(e) {
 			if (numPart != 1) {
 				var size = 9*canSize/10/nCol;
 
-				drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont);
-				drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont);
+				drawAffinityMatrix(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymCont,dispMatSymCont);
+				drawAffinityMatrix(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,affMatSymNoCont,dispMatSymNoCont);
 
 				drawHighlightedColumn(ctxToDrawContext,9*canSize/10,2,canSize/20,canSize/20,size,numPart-2);
 				drawHighlightedColumn(ctxToDrawNoContext,9*canSize/10,2,canSize/20,canSize/20,size,numPart-2);
