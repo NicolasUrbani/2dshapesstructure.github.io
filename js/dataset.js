@@ -568,15 +568,17 @@ function computeAffinityMatrixSymCont(shape) {
 				var sim_i = parts_sim_i_cont[teams[t]];
 				// if there is only one part similar
 				if (!Array.isArray(sim_i)) {
-					var id_part_j = sim_i-2;
-					// we add to the affinity matrix 1 to the numbers of times those parts have been judged similar
-					nb_sim_mat[id_part_i][id_part_j]+=1;
-					nb_sim_mat[id_part_j][id_part_i]+=1;
-					for(var p=0; p<nPart-1; p++){
-						// (a given part C)
-						if (id_part_j != p && id_part_i != p){							
-							nb_occ_mat[p][id_part_j]++;									
-							nb_occ_mat[id_part_j][p]++;
+					if (sim_i != "-1") {
+						var id_part_j = sim_i-2;
+						// we add to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						nb_sim_mat[id_part_i][id_part_j]+=1;
+						nb_sim_mat[id_part_j][id_part_i]+=1;
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){							
+								nb_occ_mat[p][id_part_j]++;									
+								nb_occ_mat[id_part_j][p]++;
+							}
 						}
 					}
 				// else if there is more than one part
@@ -712,15 +714,17 @@ function computeAffinityMatrixSymNoCont(shape) {
 				var sim_i = parts_sim_i_nocont[teams[t]];
 				// if there is only one part similar
 				if (!Array.isArray(sim_i)) {
-					var id_part_j = sim_i-2;
-					// we add to the affinity matrix 1 to the numbers of times those parts have been judged similar
-					nb_sim_mat[id_part_i][id_part_j]+=1;
-					nb_sim_mat[id_part_j][id_part_i]+=1;
-					for(var p=0; p<nPart-1; p++){
-						// (a given part C)
-						if (id_part_j != p && id_part_i != p){							
-							nb_occ_mat[p][id_part_j]++;									
-							nb_occ_mat[id_part_j][p]++;
+					if (sim_i != "-1") {
+						var id_part_j = sim_i-2;
+						// we add to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						nb_sim_mat[id_part_i][id_part_j]+=1;
+						nb_sim_mat[id_part_j][id_part_i]+=1;
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){							
+								nb_occ_mat[p][id_part_j]++;									
+								nb_occ_mat[id_part_j][p]++;
+							}
 						}
 					}
 				// else if there is more than one part
@@ -856,14 +860,16 @@ function computeAffinityMatrixNoSymCont(shape) {
 				var sim_i = parts_sim_i_cont[teams[t]];
 				// if there is only one part similar
 				if (!Array.isArray(sim_i)) {
-					var id_part_j = sim_i-2;
-					// we add to the affinity matrix 1 to the numbers of times those parts have been judged similar
-					nb_sim_mat[id_part_i][id_part_j]+=1;
-					for(var p=0; p<nPart-1; p++){
-						// (a given part C)
-						if (id_part_j != p && id_part_i != p){							
-							nb_occ_mat[p][id_part_j]++;									
-							nb_occ_mat[id_part_j][p]++;
+					if (sim_i != "-1") {
+						var id_part_j = sim_i-2;
+						// we add to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						nb_sim_mat[id_part_i][id_part_j]+=1;
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){							
+								nb_occ_mat[p][id_part_j]++;									
+								nb_occ_mat[id_part_j][p]++;
+							}
 						}
 					}
 				// else if there is more than one part
@@ -997,14 +1003,16 @@ function computeAffinityMatrixNoSymNoCont(shape) {
 				var sim_i = parts_sim_i_nocont[teams[t]];
 				// if there is only one part similar
 				if (!Array.isArray(sim_i)) {
-					var id_part_j = sim_i-2;
-					// we add to the affinity matrix 1 to the numbers of times those parts have been judged similar
-					nb_sim_mat[id_part_i][id_part_j]+=1;
-					for(var p=0; p<nPart-1; p++){
-						// (a given part C)
-						if (id_part_j != p && id_part_i != p){							
-							nb_occ_mat[p][id_part_j]++;									
-							nb_occ_mat[id_part_j][p]++;
+					if (sim_i != "-1") {
+						var id_part_j = sim_i-2;
+						// we add to the affinity matrix 1 to the numbers of times those parts have been judged similar
+						nb_sim_mat[id_part_i][id_part_j]+=1;
+						for(var p=0; p<nPart-1; p++){
+							// (a given part C)
+							if (id_part_j != p && id_part_i != p){							
+								nb_occ_mat[p][id_part_j]++;									
+								nb_occ_mat[id_part_j][p]++;
+							}
 						}
 					}
 				// else if there is more than one part

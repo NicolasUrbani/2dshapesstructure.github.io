@@ -155,14 +155,16 @@ function drawSimilarities(ctxToDraw,scale,width,offX,offY,points,triangles,parts
 			}
 		}
 	} else {
-		trianglesPart = trianglesFromPart(triangles,parts,similarities);
-		var color = 2;
-		if (!context) {
-			color = 4
-		}
-		for(var t=0; t<trianglesPart.length; t++) {
-			fillTriangle(ctxToDraw,t,scale,offX,offY,color,points,trianglesPart);
-			drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesPart);
+		if (similarities != "-1") {
+			trianglesPart = trianglesFromPart(triangles,parts,similarities);
+			var color = 2;
+			if (!context) {
+				color = 4
+			}
+			for(var t=0; t<trianglesPart.length; t++) {
+				fillTriangle(ctxToDraw,t,scale,offX,offY,color,points,trianglesPart);
+				drawPart(ctxToDraw,scale,width,offX,offY,points,trianglesPart);
+			}
 		}
 	}	
 
