@@ -83,10 +83,10 @@ for i=1:nb_selections
                     end
                 end
             else
-                if (~isKey(tmp_inter,ind_team))
-                    tmp_inter(ind_team) = [];
+                if (~isKey(tmp,ind_team))
+                    tmp(ind_team) = [];
                 end
-                tmp_inter(ind_team) = [tmp_inter(ind_team) "-1"];
+                tmp(ind_team) = [tmp(ind_team) "-1"];
             end
             part_map(key) = tmp;
             part_map_inter(key) = tmp_inter;
